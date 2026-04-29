@@ -30,7 +30,7 @@
   const TEXT_SECONDARY = "#94a3b8";
 
   const ASSETS = {
-    aggregation: "dashboard_aggregation.json",
+    aggregation: "dashboard_aggregation.json?v=2",
     landsdel:    "GeoData/landsdel.geojson",
     regions:     "GeoData/regions.json",
     munis:       "GeoData/municipalities_clean.geojson",
