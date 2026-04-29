@@ -149,40 +149,55 @@ def load_data() -> pd.DataFrame:
 # Chart 1: National income gap over time (line chart, real 2024 DKK)
 # ---------------------------------------------------------------------------
 def chart_time(df: pd.DataFrame) -> None:
-    # National view: restrict to Hele landet, then average across UDDNIV per
-    # (year, gender). UDDNIV has no "all" total, so we approximate it with an
-    # unweighted mean across education levels — trends and gender gap remain
-    # representative even without population weights.
-    sub = df[df["OMRÅDE"] == COUNTRY]
+    # National view: restrict to Hele landet and GENDER_TOTAL
+    sub = df[(df["OMRÅDE"] == COUNTRY) & (df["KOEN"] == GENDER_TOTAL)]
 
     pivot = (
-        sub.groupby(["TID", "KOEN"], observed=True)["Adjusted_Income"]
+        sub.groupby(["TID", "UDDNIV"], observed=True)["Adjusted_Income"]
         .mean()
-        .unstack("KOEN")
+        .unstack("UDDNIV")
         .sort_index()
     )
+    
+    if "Uoplyst" in pivot.columns:
+        pivot = pivot.drop(columns=["Uoplyst"])
+
+    label_lookup = {
+        "10 GRUNDSKOLE": "Primary school",
+        "20+25 GYMNASIALE UDDANNELSER": "Gymnasium",
+        "35 ERHVERVSUDDANNELSER": "Vocational Education",
+        "40 KORTE VIDEREGÅENDE UDDANNELSER": "Short Higher Education",
+        "50+60 MELLEMLANGE VIDEREGÅENDE UDDANNELSER INKL. BACHELOR": "Medium Higher Education",
+        "65 LANGE VIDEREGÅENDE UDDANNELSER": "Long Higher Education",
+    }
+    
+    # Sort columns by their latest value so the legend order matches the lines visually
+    latest_year = pivot.index.max()
+    sorted_cols = pivot.loc[latest_year].sort_values(ascending=False).index
+    pivot = pivot[sorted_cols]
 
     fig, ax = plt.subplots(figsize=(11, 4.8), dpi=140)
 
-    color_map = {"Mænd": ACCENT_BLUE, "Kvinder": ACCENT_PINK, GENDER_TOTAL: ACCENT_PURPLE}
-    label_map = {"Mænd": "Men", "Kvinder": "Women", GENDER_TOTAL: "All"}
-
-    for col in pivot.columns:
+    cmap = plt.cm.colors.LinearSegmentedColormap.from_list(
+        "accents", [ACCENT_BLUE, ACCENT_PURPLE, ACCENT_PINK]
+    )
+    
+    for i, col in enumerate(pivot.columns):
+        color = cmap(i / max(1, len(pivot.columns) - 1))
+        label = label_lookup.get(col, col)
         ax.plot(
             pivot.index, pivot[col],
-            marker="o", markersize=6, linewidth=2.5,
-            color=color_map.get(col, ACCENT_PURPLE),
-            label=label_map.get(col, col),
+            marker="o", markersize=4, linewidth=2.5,
+            color=color,
+            label=label,
         )
-        ax.fill_between(pivot.index, pivot[col], pivot[col].min() * 0.95,
-                        color=color_map.get(col, ACCENT_PURPLE), alpha=0.05)
 
-    ax.set_title("National Income Gap Over Time — Adjusted for Inflation (2024 DKK)",
+    ax.set_title("Income by Education Over Time — Adjusted for Inflation (2024 DKK)",
                  pad=14, fontsize=12, color=TEXT_COLOR)
     ax.set_xlabel("Year")
     ax.set_ylabel("Average disposable income (2024 DKK)")
     ax.yaxis.set_major_formatter(FuncFormatter(kr_formatter))
-    ax.legend(frameon=False, loc="upper left")
+    ax.legend(frameon=False, loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=9)
     ax.margins(x=0.02)
 
     fig.tight_layout()
@@ -212,11 +227,11 @@ def chart_education(df: pd.DataFrame) -> None:
 
     label_lookup = {
         "10 GRUNDSKOLE": "Primary school",
-        "20+25 GYMNASIALE UDDANNELSER": "Upper secondary",
-        "35 ERHVERVSUDDANNELSER": "Vocational",
-        "40 KORTE VIDEREGÅENDE UDDANNELSER": "Short tertiary",
-        "50+60 MELLEMLANGE VIDEREGÅENDE UDDANNELSER INKL. BACHELOR": "Medium tertiary / Bachelor",
-        "65 LANGE VIDEREGÅENDE UDDANNELSER": "Long tertiary",
+        "20+25 GYMNASIALE UDDANNELSER": "Gymnasium",
+        "35 ERHVERVSUDDANNELSER": "Vocational Education",
+        "40 KORTE VIDEREGÅENDE UDDANNELSER": "Short Higher Education",
+        "50+60 MELLEMLANGE VIDEREGÅENDE UDDANNELSER INKL. BACHELOR": "Medium Higher Education",
+        "65 LANGE VIDEREGÅENDE UDDANNELSER": "Long Higher Education",
     }
     labels = [label_lookup.get(idx, idx) for idx in by_edu.index]
 
@@ -256,7 +271,11 @@ def chart_education(df: pd.DataFrame) -> None:
 # ---------------------------------------------------------------------------
 def chart_region(df: pd.DataFrame) -> None:
     latest = int(df["TID"].max())
-    sub = df[(df["TID"] == latest) & (df["KOEN"] == GENDER_TOTAL)]
+    sub = df[
+        (df["TID"] == latest) 
+        & (df["KOEN"] == GENDER_TOTAL)
+        & (df["UDDNIV"] == "65 LANGE VIDEREGÅENDE UDDANNELSER")
+    ]
 
     # Drop national + landsdel/region rollups so the chart shows municipalities.
     areas = sub["OMRÅDE"].astype(str)
@@ -284,7 +303,7 @@ def chart_region(df: pd.DataFrame) -> None:
     ax.scatter(x, y, color=ACCENT_PINK, s=35, zorder=3,
                edgecolor=ACCENT_PURPLE, linewidth=1)
 
-    ax.set_title(f"Regional Distribution — {latest}, Adjusted for Inflation (2024 DKK)",
+    ax.set_title(f"Regional Distribution (Long Tertiary) — {latest}, Adjusted (2024 DKK)",
                  pad=14, fontsize=12, color=TEXT_COLOR)
     ax.set_xticks(x)
     ax.set_xticklabels(top_n.index, rotation=45, ha="right", fontsize=9)

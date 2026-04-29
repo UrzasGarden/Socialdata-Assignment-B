@@ -8,7 +8,7 @@ import pandas as pd
 import plotly.express as px
 
 # Load data
-data_path = "C:/Users/cheli/Downloads/INDKP107_komplet.csv/INDKP107_komplet.csv"
+data_path = "newWebsite/INDKP107_komplet.csv"
 Data = pd.read_csv(data_path, sep=";")
 Data = Data.dropna()
 
@@ -86,4 +86,8 @@ Data["Income_Type"] = Data["Income_Type"].replace({
     "Skattepligtig indkomst": "38 Taxable income",
     "Ækvivaleret disponibel indkomst": "39 Equivalized disposable income",
 })
+
+print("Data processing complete.")
+print(Data.info())
+print(Data.head())
 

@@ -43,6 +43,11 @@
                     </div>
 
                     <div class="control-group">
+                        <label for="income-select">Income Type</label>
+                        <select id="income-select" class="control-select"></select>
+                    </div>
+
+                    <div class="control-group">
                         <label for="education-select">Education Level</label>
                         <select id="education-select" class="control-select"></select>
                     </div>
@@ -55,10 +60,10 @@
                     <div class="control-group">
                         <label>Metric (Y-Axis)</label>
                         <div class="viz-toggle" role="group" aria-label="Y-axis metric" id="metric-toggle">
-                            <button type="button" class="viz-btn active" data-metric="gap_abs" title="Income gap in kroner">Gap (kr.)</button>
-                            <button type="button" class="viz-btn" data-metric="men"     title="Men's average income">Men</button>
-                            <button type="button" class="viz-btn" data-metric="women"   title="Women's average income">Women</button>
-                            <button type="button" class="viz-btn" data-metric="gap_pct" title="Gap as % of women's income">Gap (%)</button>
+                            <button type="button" class="metric-btn active" data-metric="gap_abs" title="Income gap in kroner">Gap (kr.)</button>
+                            <button type="button" class="metric-btn" data-metric="men"     title="Men's average income">Men</button>
+                            <button type="button" class="metric-btn" data-metric="women"   title="Women's average income">Women</button>
+                            <button type="button" class="metric-btn" data-metric="gap_pct" title="Gap as % of women's income">Gap (%)</button>
                         </div>
                     </div>
 
