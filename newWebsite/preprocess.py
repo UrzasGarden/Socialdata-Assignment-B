@@ -33,7 +33,7 @@ GRID_COLOR = "#ffffff"
 
 # Filter values used throughout. Strings exactly as they appear in the CSV.
 UNIT_AVG_ALL = "Gennemsnit for alle personer (kr.)"
-INCOME_TYPE = "1 Disponibel indkomst (2+30-31-32-35)"
+INCOME_TYPE = "4 Løn"
 GENDER_TOTAL = "Mænd og kvinder i alt"
 COUNTRY = "Hele landet"
 
@@ -203,7 +203,7 @@ def chart_education(df: pd.DataFrame) -> None:
     ax.set_yticks(y)
     ax.set_yticklabels(labels, fontsize=9)
     ax.xaxis.set_major_formatter(FuncFormatter(kr_formatter))
-    ax.set_xlabel("Average disposable income (2024 DKK)")
+    ax.set_xlabel("Average wages (2024 DKK)")
     ax.legend(frameon=False, loc="lower right")
     ax.tick_params(axis="y", length=0)
     ax.grid(axis="y", visible=False)
@@ -254,7 +254,7 @@ def chart_region(df: pd.DataFrame) -> None:
     ax.set_yticks(y)
     ax.set_yticklabels(top_n.index, fontsize=9)
     ax.xaxis.set_major_formatter(FuncFormatter(kr_formatter))
-    ax.set_xlabel("Average disposable income (2024 DKK)")
+    ax.set_xlabel("Average wages (2024 DKK)")
     
     ax.legend(frameon=False, loc="lower right")
     ax.grid(axis="y", visible=False)
