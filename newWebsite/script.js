@@ -30,7 +30,7 @@
   const TEXT_SECONDARY = "#94a3b8";
 
   const ASSETS = {
-    aggregation: "dashboard_aggregation.json",
+    aggregation: "dashboard_aggregation.json?v=2",
     landsdel:    "GeoData/landsdel.geojson",
     regions:     "GeoData/regions.json",
     munis:       "GeoData/municipalities_clean.geojson",
@@ -58,10 +58,13 @@
   // -----------------------------------------------------------------------
   const state = {
     meta: null,
-    regionData: null,        // { year: { region: { edu: {Men, Women, Gap} } } }
+    fullData: null,          // Complete nested structure: { [IncomeType]: { National_Data, Region_Data, Muni_Data } }
+    nationalData: null,
+    regionData: null,        // Pointer to current income type's Region_Data
     muniData:   null,
     geo: { country: null, regions: null, munis: null },
 
+    incomeType: null,        // selected income type
     education: null,         // selected education label (string)
     year: null,              // selected year (string, e.g. "2024")
     layer: "regions",        // "country" | "regions" | "munis"
@@ -86,9 +89,8 @@
     ]);
 
     state.meta         = agg.Metadata;
-    state.nationalData = agg.Data.National_Data;
-    state.regionData   = agg.Data.Region_Data;
-    state.muniData     = agg.Data.Municipality_Data;
+    state.fullData     = agg.Data;
+    // We will initialize nationalData, regionData, and muniData in populateControls()
     state.geo.country = country;
     state.geo.regions = regions;
     state.geo.munis   = munis;
@@ -98,8 +100,25 @@
   // 2. Populate dropdowns from metadata
   // -----------------------------------------------------------------------
   function populateControls() {
+    const incomeSel = document.getElementById("income-select");
     const eduSel  = document.getElementById("education-select");
     const yearSel = document.getElementById("year-select");
+
+    // Populate Income Types
+    state.meta.Income_Types.forEach(inc => {
+      const opt = document.createElement("option");
+      opt.value = inc;
+      opt.textContent = inc;
+      incomeSel.appendChild(opt);
+    });
+    const defaultIncome = state.meta.Income_Types.includes("Disposable") ? "Disposable" : state.meta.Income_Types[0];
+    incomeSel.value = defaultIncome;
+    state.incomeType = defaultIncome;
+
+    // Set initial pointers
+    state.nationalData = state.fullData[state.incomeType].National_Data;
+    state.regionData   = state.fullData[state.incomeType].Region_Data;
+    state.muniData     = state.fullData[state.incomeType].Municipality_Data;
 
     state.meta.Education_Levels.forEach(lv => {
       const opt = document.createElement("option");
@@ -456,15 +475,24 @@
       : points.slice(0, 6).map(p => p.name)
     );
 
-    const datasets = areas.map((name, i) => ({
-      label: name,
-      data: years.map(y => dataDict[String(y)]?.[name]?.[state.education]?.Gap ?? null),
-      borderColor: palette[i % palette.length],
-      backgroundColor: palette[i % palette.length] + "22",
-      tension: 0.3,
-      pointRadius: 3,
-      spanGaps: true,
-    }));
+    const datasets = areas.map((name, i) => {
+      return {
+        label: name,
+        data: years.map(y => {
+          const dp = dataDict[String(y)]?.[name]?.[state.education];
+          if (!dp) return null;
+          if (state.metric === "men") return dp.Men;
+          if (state.metric === "women") return dp.Women;
+          if (state.metric === "gap_pct") return dp.Women ? ((dp.Gap / dp.Women) * 100) : null;
+          return dp.Gap;
+        }),
+        borderColor: palette[i % palette.length],
+        backgroundColor: palette[i % palette.length] + "22",
+        tension: 0.3,
+        pointRadius: 3,
+        spanGaps: true,
+      };
+    });
 
     state.chart = new Chart(canvas.getContext("2d"), {
       type: "line",
@@ -540,6 +568,15 @@
   // 5. Wire up controls
   // -----------------------------------------------------------------------
   function setupControls() {
+    document.getElementById("income-select").addEventListener("change", e => {
+      state.incomeType = e.target.value;
+      state.nationalData = state.fullData[state.incomeType].National_Data;
+      state.regionData   = state.fullData[state.incomeType].Region_Data;
+      state.muniData     = state.fullData[state.incomeType].Municipality_Data;
+      renderLayer();
+      renderChart();
+    });
+
     document.getElementById("education-select").addEventListener("change", e => {
       state.education = e.target.value;
       renderLayer();
@@ -557,6 +594,16 @@
       renderLayer();
       renderChart();
       renderSelectionChips();
+    });
+
+    document.querySelectorAll(".metric-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".metric-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.metric = btn.dataset.metric;
+        renderLayer();
+        renderChart();
+      });
     });
 
     document.querySelectorAll(".viz-btn").forEach(btn => {

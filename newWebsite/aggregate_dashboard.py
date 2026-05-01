@@ -65,12 +65,12 @@ CPI_2024_MULTIPLIER = {
 # Map raw Danish UDDNIV codes (with their messy trailing whitespace) to clean,
 # JS-friendly English labels. Anything not in the map is dropped.
 EDUCATION_LABELS = {
-    "10 GRUNDSKOLE": "Primary",
-    "20+25 GYMNASIALE UDDANNELSER": "Upper secondary",
-    "35 ERHVERVSUDDANNELSER": "Vocational",
-    "40 KORTE VIDEREGÅENDE UDDANNELSER": "Short tertiary",
-    "50+60 MELLEMLANGE VIDEREGÅENDE UDDANNELSER INKL. BACHELOR": "Medium tertiary / Bachelor",
-    "65 LANGE VIDEREGÅENDE UDDANNELSER": "Long tertiary",
+    "10 GRUNDSKOLE": "Primary school",
+    "20+25 GYMNASIALE UDDANNELSER": "Gymnasium",
+    "35 ERHVERVSUDDANNELSER": "Vocational Education",
+    "40 KORTE VIDEREGÅENDE UDDANNELSER": "Short Higher Education",
+    "50+60 MELLEMLANGE VIDEREGÅENDE UDDANNELSER INKL. BACHELOR": "Medium Higher Education",
+    "65 LANGE VIDEREGÅENDE UDDANNELSER": "Long Higher Education",
 }
 
 
@@ -104,11 +104,11 @@ def load_filtered() -> pd.DataFrame:
 
     mask = (
         (df["ENHED"] == UNIT_AVG_ALL)
-        & (df["INDKOMSTTYPE"] == INCOME_TYPE)
+        & (df["INDKOMSTTYPE"].isin(INCOME_TYPES.values()))
         & (df["KOEN"].isin(["Mænd", "Kvinder"]))   # gap needs M & F only
     )
     df = df.loc[mask].dropna(subset=["INDHOLD"]).copy()
-    print(f"      after filter (Avg / Disposable / M+F only): {len(df):,}")
+    print(f"      after filter (Avg / M+F only): {len(df):,}")
     return df
 
 
@@ -134,10 +134,14 @@ def pivot_gender(df: pd.DataFrame) -> pd.DataFrame:
 
     # Map raw UDDNIV -> clean English label, drop "Uoplyst" and unknowns.
     df["Education"] = df["UDDNIV"].map(EDUCATION_LABELS)
-    df = df.dropna(subset=["Education"])
+    
+    inv_income = {v: k for k, v in INCOME_TYPES.items()}
+    df["IncomeTypeLabel"] = df["INDKOMSTTYPE"].map(inv_income)
+    
+    df = df.dropna(subset=["Education", "IncomeTypeLabel"])
 
     grouped = (
-        df.groupby(["TID", "OMRÅDE", "Education", "KOEN"], observed=True)["Adjusted_Income"]
+        df.groupby(["TID", "OMRÅDE", "Education", "IncomeTypeLabel", "KOEN"], observed=True)["Adjusted_Income"]
         .mean()
         .round()
         .astype("int64")
@@ -146,7 +150,7 @@ def pivot_gender(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     # After unstack, columns include "Mænd" and "Kvinder". Some (year, area,
-    # education) cells may be missing one gender — drop those rows so the
+    # education, income) cells may be missing one gender — drop those rows so the
     # gap is always meaningful.
     grouped = grouped.dropna(subset=["Mænd", "Kvinder"])
     grouped = grouped.rename(columns={"Mænd": "Men", "Kvinder": "Women"})
@@ -171,36 +175,37 @@ def classify_area(area: str) -> str:
     return "municipality"
 
 
-def build_nested(grouped: pd.DataFrame) -> tuple[dict, dict, dict, list, list]:
+def build_nested(grouped: pd.DataFrame) -> tuple[dict, list, list]:
     print("[4/5] Building nested national / region / municipality dictionaries ...")
 
     # Strip "Region " prefix so JS keys are the short names users recognise.
     grouped["AreaKind"] = grouped["OMRÅDE"].map(classify_area)
     grouped["AreaName"] = grouped["OMRÅDE"].str.replace(r"^Region ", "", regex=True)
 
-    national_data: dict = {}
-    region_data: dict = {}
-    muni_data: dict = {}
+    data_by_income = {
+        k: {"National_Data": {}, "Region_Data": {}, "Municipality_Data": {}} 
+        for k in INCOME_TYPES.keys()
+    }
 
     # "Hele landet" rows go into National_Data keyed by year -> education.
     # No area sub-key needed since there is only one national figure.
     country_subset = grouped[grouped["AreaKind"] == "country"]
-    for (year, _area, edu), row in country_subset.set_index(
-        ["TID", "AreaName", "Education"]
+    for (year, _area, edu, inc), row in country_subset.set_index(
+        ["TID", "AreaName", "Education", "IncomeTypeLabel"]
     ).iterrows():
-        national_data.setdefault(str(year), {})[edu] = {
+        data_by_income[inc]["National_Data"].setdefault(str(year), {})[edu] = {
             "Men": int(row["Men"]),
             "Women": int(row["Women"]),
             "Gap": int(row["Gap"]),
         }
 
-    for kind, target in (("region", region_data), ("municipality", muni_data)):
+    for kind, target_key in (("region", "Region_Data"), ("municipality", "Municipality_Data")):
         subset = grouped[grouped["AreaKind"] == kind]
-        for (year, area, edu), row in subset.set_index(
-            ["TID", "AreaName", "Education"]
+        for (year, area, edu, inc), row in subset.set_index(
+            ["TID", "AreaName", "Education", "IncomeTypeLabel"]
         ).iterrows():
             year_key = str(year)
-            target.setdefault(year_key, {}).setdefault(area, {})[edu] = {
+            data_by_income[inc][target_key].setdefault(year_key, {}).setdefault(area, {})[edu] = {
                 "Men": int(row["Men"]),
                 "Women": int(row["Women"]),
                 "Gap": int(row["Gap"]),
@@ -208,18 +213,15 @@ def build_nested(grouped: pd.DataFrame) -> tuple[dict, dict, dict, list, list]:
 
     regions = sorted(grouped.loc[grouped["AreaKind"] == "region", "AreaName"].unique())
     munis = sorted(grouped.loc[grouped["AreaKind"] == "municipality", "AreaName"].unique())
-    nat_years = sorted(national_data.keys())
-    print(f"      national years: {len(nat_years)}  |  regions: {len(regions)}  |  municipalities: {len(munis)}")
-    return national_data, region_data, muni_data, regions, munis
+    print(f"      regions: {len(regions)}  |  municipalities: {len(munis)}")
+    return data_by_income, regions, munis
 
 
 # ---------------------------------------------------------------------------
 # Step 5 — Write JSON
 # ---------------------------------------------------------------------------
 def write_json(grouped: pd.DataFrame,
-               national_data: dict,
-               region_data: dict,
-               muni_data: dict,
+               data_by_income: dict,
                regions: list,
                munis: list) -> None:
     print(f"[5/5] Writing {OUT_PATH.name} ...")
@@ -227,7 +229,7 @@ def write_json(grouped: pd.DataFrame,
         "Metadata": {
             "Updated_at": date.today().isoformat(),
             "Source": "Statistics Denmark — INDKP107",
-            "Income_Type": "Disposable income (1 Disponibel indkomst)",
+            "Income_Types": list(INCOME_TYPES.keys()),
             "Unit": "Average per person, 2024 DKK (CPI-adjusted)",
             "Base_Currency_Year": 2024,
             "Regions_Included": regions,
@@ -235,11 +237,7 @@ def write_json(grouped: pd.DataFrame,
             "Education_Levels": list(EDUCATION_LABELS.values()),
             "Years_Available": sorted(int(y) for y in grouped["TID"].unique()),
         },
-        "Data": {
-            "National_Data": national_data,
-            "Region_Data": region_data,
-            "Municipality_Data": muni_data,
-        },
+        "Data": data_by_income,
     }
 
     with OUT_PATH.open("w", encoding="utf-8") as f:
@@ -254,8 +252,8 @@ def main() -> None:
     df = load_filtered()
     df = adjust_inflation(df)
     grouped = pivot_gender(df)
-    national_data, region_data, muni_data, regions, munis = build_nested(grouped)
-    write_json(grouped, national_data, region_data, muni_data, regions, munis)
+    national_data, regions, munis = build_nested(grouped)
+    write_json(grouped, national_data, regions, munis)
     print("Done.")
 
 

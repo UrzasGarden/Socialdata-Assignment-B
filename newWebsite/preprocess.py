@@ -14,7 +14,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, PercentFormatter
 
 # ---------------------------------------------------------------------------
 # Paths & constants
@@ -38,31 +38,13 @@ GENDER_TOTAL = "Mænd og kvinder i alt"
 COUNTRY = "Hele landet"
 
 # ---------------------------------------------------------------------------
-# CPI multipliers — convert nominal DKK in year Y to real DKK in 2024.
-# Approximated from Statistics Denmark Forbrugerprisindeks (PRIS113), with
-# 2024 as the base year (multiplier = CPI_2024 / CPI_year).
+# CPI multipliers
 # ---------------------------------------------------------------------------
 CPI_2024_MULTIPLIER = {
-    2004: 1.459,
-    2005: 1.434,
-    2006: 1.407,
-    2007: 1.384,
-    2008: 1.337,
-    2009: 1.320,
-    2010: 1.288,
-    2011: 1.254,
-    2012: 1.224,
-    2013: 1.214,
-    2014: 1.206,
-    2015: 1.200,
-    2016: 1.196,
-    2017: 1.183,
-    2018: 1.174,
-    2019: 1.164,
-    2020: 1.159,
-    2021: 1.137,
-    2022: 1.052,
-    2023: 1.012,
+    2004: 1.459, 2005: 1.434, 2006: 1.407, 2007: 1.384, 2008: 1.337,
+    2009: 1.320, 2010: 1.288, 2011: 1.254, 2012: 1.224, 2013: 1.214,
+    2014: 1.206, 2015: 1.200, 2016: 1.196, 2017: 1.183, 2018: 1.174,
+    2019: 1.164, 2020: 1.159, 2021: 1.137, 2022: 1.052, 2023: 1.012,
     2024: 1.000,
 }
 
@@ -92,23 +74,17 @@ plt.rcParams.update({
     "font.size":        11,
 })
 
-
 def kr_formatter(x, _pos):
-    """Format kroner values: 612400 -> '612k kr.', 1_250_000 -> '1.25M kr.'"""
     if abs(x) >= 1_000_000:
         return f"{x / 1_000_000:.2f}M kr."
     if abs(x) >= 1_000:
         return f"{x / 1_000:.0f}k kr."
     return f"{int(x)} kr."
 
-
 # ---------------------------------------------------------------------------
 # Load
 # ---------------------------------------------------------------------------
 def load_data() -> pd.DataFrame:
-    """Stream the CSV with explicit dtypes; only keep the disposable-income,
-    average-per-person slice so the working frame is small. Adds the
-    Adjusted_Income column (2024 DKK) using the CPI multipliers above."""
     print(f"Loading {CSV_PATH.name} ...")
     df = pd.read_csv(
         CSV_PATH,
@@ -128,61 +104,59 @@ def load_data() -> pd.DataFrame:
         df[col] = df[col].astype(str).str.strip().astype("category")
 
     df["INDHOLD"] = pd.to_numeric(df["INDHOLD"], errors="coerce")
-
     mask = (df["ENHED"] == UNIT_AVG_ALL) & (df["INDKOMSTTYPE"] == INCOME_TYPE)
     df = df.loc[mask].dropna(subset=["INDHOLD"]).copy()
 
-    # Inflation-adjust to 2024 DKK. Years outside the table fall back to 1.0
-    # so we never silently drop rows; surface a warning instead.
-    missing_years = sorted(set(df["TID"].unique()) - set(CPI_2024_MULTIPLIER))
-    if missing_years:
-        print(f"  WARNING: no CPI multiplier for years {missing_years}; using 1.0")
-
     df["CPI_MULT"] = df["TID"].map(CPI_2024_MULTIPLIER).fillna(1.0).astype(float)
     df["Adjusted_Income"] = df["INDHOLD"] * df["CPI_MULT"]
-
-    print(f"Filtered rows: {len(df):,} (years {df['TID'].min()}–{df['TID'].max()})")
     return df
 
-
 # ---------------------------------------------------------------------------
-# Chart 1: National income gap over time (line chart, real 2024 DKK)
+# Chart 1: Gender Pay Gap (%) Over Time by Education
 # ---------------------------------------------------------------------------
 def chart_time(df: pd.DataFrame) -> None:
-    # National view: restrict to Hele landet, then average across UDDNIV per
-    # (year, gender). UDDNIV has no "all" total, so we approximate it with an
-    # unweighted mean across education levels — trends and gender gap remain
-    # representative even without population weights.
-    sub = df[df["OMRÅDE"] == COUNTRY]
+    sub = df[(df["OMRÅDE"] == COUNTRY) & (df["KOEN"].isin(["Mænd", "Kvinder"]))]
+    
+    pivot = sub.pivot_table(index=["TID", "UDDNIV"], columns="KOEN", values="Adjusted_Income").reset_index()
+    # Calculate % gap: (Men - Women) / Men * 100
+    pivot["Gap"] = (pivot["Mænd"] - pivot["Kvinder"]) / pivot["Mænd"] * 100
+    
+    gap_pivot = pivot.pivot(index="TID", columns="UDDNIV", values="Gap").sort_index()
+    if "Uoplyst" in gap_pivot.columns:
+        gap_pivot = gap_pivot.drop(columns=["Uoplyst"])
 
-    pivot = (
-        sub.groupby(["TID", "KOEN"], observed=True)["Adjusted_Income"]
-        .mean()
-        .unstack("KOEN")
-        .sort_index()
-    )
+    label_lookup = {
+        "10 GRUNDSKOLE": "Primary school",
+        "20+25 GYMNASIALE UDDANNELSER": "Gymnasium",
+        "35 ERHVERVSUDDANNELSER": "Vocational Education",
+        "40 KORTE VIDEREGÅENDE UDDANNELSER": "Short Higher Education",
+        "50+60 MELLEMLANGE VIDEREGÅENDE UDDANNELSER INKL. BACHELOR": "Medium Higher Education",
+        "65 LANGE VIDEREGÅENDE UDDANNELSER": "Long Higher Education",
+    }
+    
+    latest_year = gap_pivot.index.max()
+    sorted_cols = gap_pivot.loc[latest_year].sort_values(ascending=False).index
+    gap_pivot = gap_pivot[sorted_cols]
 
     fig, ax = plt.subplots(figsize=(11, 4.8), dpi=140)
-
-    color_map = {"Mænd": ACCENT_BLUE, "Kvinder": ACCENT_PINK, GENDER_TOTAL: ACCENT_PURPLE}
-    label_map = {"Mænd": "Men", "Kvinder": "Women", GENDER_TOTAL: "All"}
-
-    for col in pivot.columns:
+    cmap = plt.cm.colors.LinearSegmentedColormap.from_list(
+        "accents", [ACCENT_BLUE, ACCENT_PURPLE, ACCENT_PINK]
+    )
+    
+    for i, col in enumerate(gap_pivot.columns):
+        color = cmap(i / max(1, len(gap_pivot.columns) - 1))
+        label = label_lookup.get(col, col)
         ax.plot(
-            pivot.index, pivot[col],
-            marker="o", markersize=6, linewidth=2.5,
-            color=color_map.get(col, ACCENT_PURPLE),
-            label=label_map.get(col, col),
+            gap_pivot.index, gap_pivot[col],
+            marker="o", markersize=4, linewidth=2.5,
+            color=color, label=label,
         )
-        ax.fill_between(pivot.index, pivot[col], pivot[col].min() * 0.95,
-                        color=color_map.get(col, ACCENT_PURPLE), alpha=0.05)
 
-    ax.set_title("National Income Gap Over Time — Adjusted for Inflation (2024 DKK)",
-                 pad=14, fontsize=12, color=TEXT_COLOR)
+    ax.set_title("Gender Income Gap Over Time", pad=14, fontsize=12, color=TEXT_COLOR)
     ax.set_xlabel("Year")
-    ax.set_ylabel("Average disposable income (2024 DKK)")
-    ax.yaxis.set_major_formatter(FuncFormatter(kr_formatter))
-    ax.legend(frameon=False, loc="upper left")
+    ax.set_ylabel("Income Gap (% less than men)")
+    ax.yaxis.set_major_formatter(PercentFormatter())
+    ax.legend(frameon=False, loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=9)
     ax.margins(x=0.02)
 
     fig.tight_layout()
@@ -191,58 +165,49 @@ def chart_time(df: pd.DataFrame) -> None:
     plt.close(fig)
     print(f"  wrote {out.relative_to(BASE_DIR)}")
 
-
 # ---------------------------------------------------------------------------
-# Chart 2: Income by education (horizontal bar, latest year, real DKK)
+# Chart 2: Income by Education (Men vs Women)
 # ---------------------------------------------------------------------------
 def chart_education(df: pd.DataFrame) -> None:
     latest = int(df["TID"].max())
     sub = df[
         (df["TID"] == latest)
         & (df["OMRÅDE"] == COUNTRY)
-        & (df["KOEN"] == GENDER_TOTAL)
+        & (df["KOEN"].isin(["Mænd", "Kvinder"]))
     ]
 
-    by_edu = (
-        sub.groupby("UDDNIV", observed=True)["Adjusted_Income"]
-        .mean()
-        .sort_values(ascending=True)
-    )
-    by_edu = by_edu[by_edu.index != "Uoplyst"]
+    pivot = sub.pivot_table(index="UDDNIV", columns="KOEN", values="Adjusted_Income")
+    if "Uoplyst" in pivot.index:
+        pivot = pivot.drop(index="Uoplyst")
+    pivot = pivot.sort_values(by="Mænd", ascending=True)
 
     label_lookup = {
         "10 GRUNDSKOLE": "Primary school",
-        "20+25 GYMNASIALE UDDANNELSER": "Upper secondary",
-        "35 ERHVERVSUDDANNELSER": "Vocational",
-        "40 KORTE VIDEREGÅENDE UDDANNELSER": "Short tertiary",
-        "50+60 MELLEMLANGE VIDEREGÅENDE UDDANNELSER INKL. BACHELOR": "Medium tertiary / Bachelor",
-        "65 LANGE VIDEREGÅENDE UDDANNELSER": "Long tertiary",
+        "20+25 GYMNASIALE UDDANNELSER": "Gymnasium",
+        "35 ERHVERVSUDDANNELSER": "Vocational Education",
+        "40 KORTE VIDEREGÅENDE UDDANNELSER": "Short Higher",
+        "50+60 MELLEMLANGE VIDEREGÅENDE UDDANNELSER INKL. BACHELOR": "Medium Higher",
+        "65 LANGE VIDEREGÅENDE UDDANNELSER": "Long Higher",
     }
-    labels = [label_lookup.get(idx, idx) for idx in by_edu.index]
+    labels = [label_lookup.get(idx, idx) for idx in pivot.index]
 
     fig, ax = plt.subplots(figsize=(8, 5.5), dpi=140)
+    
+    y = np.arange(len(labels))
+    height = 0.35
 
-    cmap = plt.cm.colors.LinearSegmentedColormap.from_list(
-        "accents", [ACCENT_BLUE, ACCENT_PURPLE, ACCENT_PINK]
-    )
-    colors = [cmap(i / max(1, len(by_edu) - 1)) for i in range(len(by_edu))]
+    ax.barh(y - height/2, pivot["Kvinder"], height, label="Women", color=ACCENT_PINK, edgecolor="none")
+    ax.barh(y + height/2, pivot["Mænd"], height, label="Men", color=ACCENT_BLUE, edgecolor="none")
 
-    bars = ax.barh(labels, by_edu.values, color=colors, edgecolor="none")
-
-    for bar, val in zip(bars, by_edu.values):
-        ax.text(
-            bar.get_width() * 1.01, bar.get_y() + bar.get_height() / 2,
-            kr_formatter(val, None),
-            va="center", ha="left", fontsize=9, color=TEXT_COLOR,
-        )
-
-    ax.set_title(f"Income by Education — {latest}, Adjusted for Inflation (2024 DKK)",
-                 pad=14, fontsize=12, color=TEXT_COLOR)
+    ax.set_title(f"Income by Education (Men vs Women) — {latest}", pad=14, fontsize=12, color=TEXT_COLOR)
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels, fontsize=9)
     ax.xaxis.set_major_formatter(FuncFormatter(kr_formatter))
     ax.set_xlabel("Average disposable income (2024 DKK)")
+    ax.legend(frameon=False, loc="lower right")
     ax.tick_params(axis="y", length=0)
     ax.grid(axis="y", visible=False)
-    ax.margins(x=0.15)
+    ax.margins(x=0.05)
 
     fig.tight_layout()
     out = OUT_DIR / "chart2_education.png"
@@ -250,15 +215,17 @@ def chart_education(df: pd.DataFrame) -> None:
     plt.close(fig)
     print(f"  wrote {out.relative_to(BASE_DIR)}")
 
-
 # ---------------------------------------------------------------------------
-# Chart 3: Regional distribution — top municipalities (latest year, real DKK)
+# Chart 3: Regional Distribution (Dumbbell Plot for Gender Gap)
 # ---------------------------------------------------------------------------
 def chart_region(df: pd.DataFrame) -> None:
     latest = int(df["TID"].max())
-    sub = df[(df["TID"] == latest) & (df["KOEN"] == GENDER_TOTAL)]
+    sub = df[
+        (df["TID"] == latest) 
+        & (df["KOEN"].isin(["Mænd", "Kvinder"]))
+        & (df["UDDNIV"] == "65 LANGE VIDEREGÅENDE UDDANNELSER")
+    ]
 
-    # Drop national + landsdel/region rollups so the chart shows municipalities.
     areas = sub["OMRÅDE"].astype(str)
     is_rollup = (
         (areas == COUNTRY)
@@ -267,30 +234,31 @@ def chart_region(df: pd.DataFrame) -> None:
     )
     sub = sub[~is_rollup]
 
-    by_area = (
-        sub.groupby("OMRÅDE", observed=True)["Adjusted_Income"]
-        .mean()
-        .sort_values(ascending=False)
-    )
+    pivot = sub.pivot_table(index="OMRÅDE", columns="KOEN", values="Adjusted_Income")
+    top_n = pivot.sort_values(by="Mænd", ascending=False).head(15)
+    
+    # Sort backwards so highest is at the top of the horizontal chart
+    top_n = top_n.sort_values(by="Mænd", ascending=True)
 
-    top_n = by_area.head(20)
-    x = np.arange(len(top_n))
-    y = top_n.values
+    fig, ax = plt.subplots(figsize=(8, 6), dpi=140)
+    y = np.arange(len(top_n))
 
-    fig, ax = plt.subplots(figsize=(8, 5.5), dpi=140)
+    # Draw line connecting the dots
+    ax.hlines(y, top_n["Kvinder"], top_n["Mænd"], color="#ffffff44", linewidth=2, zorder=1)
+    
+    # Draw dots
+    ax.scatter(top_n["Kvinder"], y, color=ACCENT_PINK, s=80, label="Women", zorder=2)
+    ax.scatter(top_n["Mænd"], y, color=ACCENT_BLUE, s=80, label="Men", zorder=2)
 
-    ax.plot(x, y, color=ACCENT_PURPLE, linewidth=2.5)
-    ax.fill_between(x, y, y.min() * 0.95, color=ACCENT_PURPLE, alpha=0.18)
-    ax.scatter(x, y, color=ACCENT_PINK, s=35, zorder=3,
-               edgecolor=ACCENT_PURPLE, linewidth=1)
-
-    ax.set_title(f"Regional Distribution — {latest}, Adjusted for Inflation (2024 DKK)",
-                 pad=14, fontsize=12, color=TEXT_COLOR)
-    ax.set_xticks(x)
-    ax.set_xticklabels(top_n.index, rotation=45, ha="right", fontsize=9)
-    ax.yaxis.set_major_formatter(FuncFormatter(kr_formatter))
-    ax.set_ylabel("Average disposable income (2024 DKK)")
-    ax.margins(x=0.02)
+    ax.set_title(f"Regional Gender Gap (Long Higher Ed.) — {latest}", pad=14, fontsize=12, color=TEXT_COLOR)
+    ax.set_yticks(y)
+    ax.set_yticklabels(top_n.index, fontsize=9)
+    ax.xaxis.set_major_formatter(FuncFormatter(kr_formatter))
+    ax.set_xlabel("Average disposable income (2024 DKK)")
+    
+    ax.legend(frameon=False, loc="lower right")
+    ax.grid(axis="y", visible=False)
+    ax.margins(x=0.05)
 
     fig.tight_layout()
     out = OUT_DIR / "chart3_region.png"
@@ -298,10 +266,6 @@ def chart_region(df: pd.DataFrame) -> None:
     plt.close(fig)
     print(f"  wrote {out.relative_to(BASE_DIR)}")
 
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 def main() -> None:
     df = load_data()
     print("Rendering charts ...")
@@ -309,7 +273,6 @@ def main() -> None:
     chart_education(df)
     chart_region(df)
     print("Done.")
-
 
 if __name__ == "__main__":
     main()
