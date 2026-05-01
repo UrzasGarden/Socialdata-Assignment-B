@@ -8,7 +8,30 @@ import pandas as pd
 import plotly.express as px
 
 # Load data
-data_path = "newWebsite/INDKP107_komplet.csv"
+# Try to find the CSV file in common locations
+from pathlib import Path
+import os
+
+possible_paths = [
+    "INDKP107_komplet.csv",
+    "data/INDKP107_komplet.csv",
+    os.path.expanduser("~/Downloads/INDKP107_komplet.csv"),
+    "C:/Users/cheli/Downloads/INDKP107_komplet.csv/INDKP107_komplet.csv"  # Original path
+]
+
+data_path = None
+for path in possible_paths:
+    if Path(path).exists():
+        data_path = path
+        break
+
+if data_path is None:
+    raise FileNotFoundError(
+        f"Could not find INDKP107_komplet.csv. Searched in: {possible_paths}\n"
+        "Please provide the correct path to the CSV file."
+    )
+
+print(f"Loading data from: {data_path}")
 Data = pd.read_csv(data_path, sep=";")
 Data = Data.dropna()
 
@@ -86,8 +109,4 @@ Data["Income_Type"] = Data["Income_Type"].replace({
     "Skattepligtig indkomst": "38 Taxable income",
     "Ækvivaleret disponibel indkomst": "39 Equivalized disposable income",
 })
-
-print("Data processing complete.")
-print(Data.info())
-print(Data.head())
 
