@@ -398,11 +398,8 @@
     let titlePrefix = "Income Gap";
     let subtitleText = `${state.incomeType || 'Disposable'} income gap, ${state.year} DKK (CPI-adjusted to 2024)`;
 
-    if (state.metric === "men") {
-      titlePrefix = "Men's Income";
-      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, ${state.year} DKK (CPI-adjusted to 2024)`;
-    } else if (state.metric === "women") {
-      titlePrefix = "Women's Income";
+    if (state.metric === "compare") {
+      titlePrefix = "Men vs Women Income";
       subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, ${state.year} DKK (CPI-adjusted to 2024)`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Income Gap (%)";
@@ -463,20 +460,21 @@
 
   function renderBar(canvas, points) {
     let datasets = [];
-    if (state.metric === "men") {
-      datasets = [{
-        label: "Men",
-        data: points.map(p => p.Men),
-        backgroundColor: ACCENT_BLUE,
-        borderRadius: 6,
-      }];
-    } else if (state.metric === "women") {
-      datasets = [{
-        label: "Women",
-        data: points.map(p => p.Women),
-        backgroundColor: ACCENT_PINK,
-        borderRadius: 6,
-      }];
+    if (state.metric === "compare") {
+      datasets = [
+        {
+          label: "Men",
+          data: points.map(p => p.Men),
+          backgroundColor: ACCENT_BLUE,
+          borderRadius: 6,
+        },
+        {
+          label: "Women",
+          data: points.map(p => p.Women),
+          backgroundColor: ACCENT_PINK,
+          borderRadius: 6,
+        }
+      ];
     } else if (state.metric === "gap_pct") {
       datasets = [{
         label: "Gap (%)",
@@ -515,24 +513,54 @@
       : points.slice(0, 6).map(p => p.name)
     );
 
-    const datasets = areas.map((name, i) => {
-      return {
-        label: name,
-        data: years.map(y => {
-          const dp = dataDict[String(y)]?.[name]?.[state.education];
-          if (!dp) return null;
-          if (state.metric === "men") return dp.Men;
-          if (state.metric === "women") return dp.Women;
-          if (state.metric === "gap_pct") return dp.Women ? ((dp.Gap / dp.Women) * 100) : null;
-          return dp.Gap;
-        }),
-        borderColor: palette[i % palette.length],
-        backgroundColor: palette[i % palette.length] + "22",
-        tension: 0.3,
-        pointRadius: 3,
-        spanGaps: true,
-      };
-    });
+    let datasets = [];
+    if (state.metric === "compare") {
+      areas.forEach((name, i) => {
+        datasets.push({
+          label: `${name} (Men)`,
+          data: years.map(y => {
+            const dp = dataDict[String(y)]?.[name]?.[state.education];
+            return dp ? dp.Men : null;
+          }),
+          borderColor: palette[i % palette.length],
+          backgroundColor: palette[i % palette.length] + "22",
+          tension: 0.3,
+          pointRadius: 3,
+          spanGaps: true,
+          borderDash: []
+        });
+        datasets.push({
+          label: `${name} (Women)`,
+          data: years.map(y => {
+            const dp = dataDict[String(y)]?.[name]?.[state.education];
+            return dp ? dp.Women : null;
+          }),
+          borderColor: palette[i % palette.length],
+          backgroundColor: palette[i % palette.length] + "22",
+          tension: 0.3,
+          pointRadius: 3,
+          spanGaps: true,
+          borderDash: [5, 5]
+        });
+      });
+    } else {
+      datasets = areas.map((name, i) => {
+        return {
+          label: name,
+          data: years.map(y => {
+            const dp = dataDict[String(y)]?.[name]?.[state.education];
+            if (!dp) return null;
+            if (state.metric === "gap_pct") return dp.Women ? ((dp.Gap / dp.Women) * 100) : null;
+            return dp.Gap;
+          }),
+          borderColor: palette[i % palette.length],
+          backgroundColor: palette[i % palette.length] + "22",
+          tension: 0.3,
+          pointRadius: 3,
+          spanGaps: true,
+        };
+      });
+    }
 
     state.chart = new Chart(canvas.getContext("2d"), {
       type: "line",
@@ -543,11 +571,8 @@
     let titlePrefix = "Gap Trend";
     let subtitleText = `${state.incomeType || 'Disposable'} income gap (Men − Women), 2024 DKK · ${areas.length} areas`;
     
-    if (state.metric === "men") {
-      titlePrefix = "Men's Income Trend";
-      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, 2024 DKK · ${areas.length} areas`;
-    } else if (state.metric === "women") {
-      titlePrefix = "Women's Income Trend";
+    if (state.metric === "compare") {
+      titlePrefix = "Men vs Women Trend";
       subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, 2024 DKK · ${areas.length} areas`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Gap Trend (%)";
