@@ -239,6 +239,11 @@
     document.getElementById("legend-max").textContent = gMax > gMin ? formatKr(gMax) : "—";
     document.getElementById("map-legend").style.opacity = gMax > gMin ? "1" : "0.3";
 
+    const legendLabel = document.querySelector("#map-legend .legend-label");
+    if (legendLabel) {
+      legendLabel.textContent = `${state.incomeType || 'Disposable'} income gap (M − W, 2024 DKK)`;
+    }
+
     // municipalities_clean.geojson already has exactly 99 dissolved features
     // (98 current municipalities + Christiansø). No filter needed — features
     // without data for the current filter show greyed out via the style fn.
@@ -391,15 +396,17 @@
     const layerLabel = layerKey === "regions" ? "Regions" : "Municipalities";
 
     let titlePrefix = "Income Gap";
-    let subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, ${state.year} DKK (CPI-adjusted to 2024)`;
+    let subtitleText = `${state.incomeType || 'Disposable'} income gap, ${state.year} DKK (CPI-adjusted to 2024)`;
 
     if (state.metric === "men") {
       titlePrefix = "Men's Income";
+      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, ${state.year} DKK (CPI-adjusted to 2024)`;
     } else if (state.metric === "women") {
       titlePrefix = "Women's Income";
+      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, ${state.year} DKK (CPI-adjusted to 2024)`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Income Gap (%)";
-      subtitleText = `Income gap as % of women's income, ${state.year}`;
+      subtitleText = `${state.incomeType || 'Disposable'} income gap as % of women's income, ${state.year}`;
     }
 
     titleEl.textContent =
@@ -534,7 +541,7 @@
     });
 
     let titlePrefix = "Gap Trend";
-    let subtitleText = `Income gap (Men − Women), 2024 DKK · ${areas.length} areas`;
+    let subtitleText = `${state.incomeType || 'Disposable'} income gap (Men − Women), 2024 DKK · ${areas.length} areas`;
     
     if (state.metric === "men") {
       titlePrefix = "Men's Income Trend";
@@ -544,7 +551,7 @@
       subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, 2024 DKK · ${areas.length} areas`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Gap Trend (%)";
-      subtitleText = `Income gap as % of women's income · ${areas.length} areas`;
+      subtitleText = `${state.incomeType || 'Disposable'} income gap as % of women's income · ${areas.length} areas`;
     }
 
     document.getElementById("chart-title").textContent =
