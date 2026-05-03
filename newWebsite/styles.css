@@ -403,7 +403,8 @@ body {
 }
 
 .viz-btn,
-.layer-btn {
+.layer-btn,
+.metric-btn {
     flex: 1;
     display: inline-flex;
     align-items: center;
@@ -422,13 +423,15 @@ body {
 }
 
 .viz-btn:hover,
-.layer-btn:hover {
+.layer-btn:hover,
+.metric-btn:hover {
     color: var(--text-primary);
     background: rgba(255, 255, 255, 0.04);
 }
 
 .viz-btn.active,
-.layer-btn.active {
+.layer-btn.active,
+.metric-btn.active {
     color: #fff;
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(139, 92, 246, 0.25));
     box-shadow: 0 0 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
