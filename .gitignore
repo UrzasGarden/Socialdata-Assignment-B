@@ -21,3 +21,5 @@ Data_processing.py
 
 # Ignore 
 .claude
+plots-to-base64/
+
