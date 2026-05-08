@@ -37,7 +37,8 @@
   };
 
   // Whichever field on a GeoJSON feature.properties holds the join key for
-  // each layer. landsdel has no data in our JSON so it's treated as context.
+  // each layer. landsdel/subregions has no data in our JSON so it's treated
+  // as context in the current explorer build.
   const NAME_FIELD = {
     country: "navn",       // landsdel.geojson: "Østjylland", "Bornholm", ...
     regions: "name",       // regions.json:    "Hovedstaden", "Sjælland", ...
@@ -58,8 +59,9 @@
   // -----------------------------------------------------------------------
   const state = {
     meta: null,
-    fullData: null,          // Complete nested structure: { [IncomeType]: { National_Data, Region_Data, Muni_Data } }
+    fullData: null,          // Complete nested structure: { [IncomeType]: { National_Data, Landsdel_Data, Region_Data, Municipality_Data } }
     nationalData: null,
+    landsdelData: null,
     regionData: null,        // Pointer to current income type's Region_Data
     muniData:   null,
     geo: { country: null, regions: null, munis: null },
@@ -90,7 +92,7 @@
 
     state.meta         = agg.Metadata;
     state.fullData     = agg.Data;
-    // We will initialize nationalData, regionData, and muniData in populateControls()
+    // We will initialize nationalData, landsdelData, regionData, and muniData in populateControls()
     state.geo.country = country;
     state.geo.regions = regions;
     state.geo.munis   = munis;
@@ -117,6 +119,7 @@
 
     // Set initial pointers
     state.nationalData = state.fullData[state.incomeType].National_Data;
+    state.landsdelData = state.fullData[state.incomeType].Landsdel_Data || {};
     state.regionData   = state.fullData[state.incomeType].Region_Data;
     state.muniData     = state.fullData[state.incomeType].Municipality_Data;
 
@@ -173,10 +176,7 @@
       const dp = state.muniData[state.year]?.[key]?.[state.education] ?? null;
       return { name: key, dp };
     }
-    // "country" layer = landsdele. All 11 share the same national figure so
-    // every feature gets the same dp — giving Denmark a uniform choropleth
-    // colour based on the real national gap for the current education/year.
-    const dp = state.nationalData?.[state.year]?.[state.education] ?? null;
+    const dp = state.landsdelData?.[state.year]?.[rawName]?.[state.education] ?? null;
     return { name: rawName, dp };
   }
 
@@ -206,16 +206,13 @@
     return [parseInt(v.slice(0,2), 16), parseInt(v.slice(2,4), 16), parseInt(v.slice(4,6), 16)];
   }
 
-  /** Compute min/max gap to anchor the colour scale and legend.
-   *  For the "country" layer we use the region domain so the national gap
-   *  gets a meaningful colour relative to regional variation. */
+  /** Compute min/max gap to anchor the colour scale and legend. */
   function gapDomain(layerKey) {
-    const domainKey = layerKey === "country" ? "regions" : layerKey;
-    const fc = state.geo[domainKey];
+    const fc = state.geo[layerKey];
     if (!fc) return [0, 0];
     const gaps = [];
     fc.features.forEach(f => {
-      const r = lookupFeature(f, domainKey);
+      const r = lookupFeature(f, layerKey);
       if (r?.dp?.Gap != null) gaps.push(r.dp.Gap);
     });
     if (!gaps.length) return [0, 0];
@@ -334,17 +331,12 @@
 
   /** Pull the current dataset for the chart based on selection + layer. */
   function getChartData() {
-    // "Whole Country" layer: return the single national data point.
-    if (state.layer === "country") {
-      const dp = state.nationalData?.[state.year]?.[state.education];
-      return {
-        layerKey: "country",
-        points: dp ? [{ name: "Denmark (National)", ...dp }] : [],
-      };
-    }
-
     const layerKey = state.layer;
-    const dataDict = layerKey === "regions" ? state.regionData : state.muniData;
+    const dataDict = layerKey === "country"
+      ? state.landsdelData
+      : layerKey === "regions"
+        ? state.regionData
+        : state.muniData;
     const yearMap  = dataDict[state.year] ?? {};
 
     // If anything is selected, restrict to that. Otherwise use every area
@@ -381,7 +373,11 @@
     canvas.classList.remove("hidden");
 
     const { layerKey, points } = getChartData();
-    const layerLabel = layerKey === "regions" ? "Regions" : "Municipalities";
+    const layerLabel = {
+      country: "Subregions",
+      regions: "Regions",
+      munis: "Municipalities",
+    }[layerKey] || "Areas";
 
     let titlePrefix = "Income Gap";
     let subtitleText = `${state.incomeType || 'Wages/salary'} gap, ${state.year} DKK (CPI-adjusted to 2024)`;
@@ -491,7 +487,11 @@
 
   /** Line chart = trend across ALL years for each chosen area. */
   function renderLine(canvas, layerKey, points) {
-    const dataDict = layerKey === "regions" ? state.regionData : state.muniData;
+    const dataDict = layerKey === "country"
+      ? state.landsdelData
+      : layerKey === "regions"
+        ? state.regionData
+        : state.muniData;
     const years = state.meta.Years_Available;
     const palette = [ACCENT_BLUE, ACCENT_PINK, ACCENT_PURPLE, "#34d399", "#fbbf24", "#f87171"];
 
@@ -627,6 +627,7 @@
     document.getElementById("income-select").addEventListener("change", e => {
       state.incomeType = e.target.value;
       state.nationalData = state.fullData[state.incomeType].National_Data;
+      state.landsdelData = state.fullData[state.incomeType].Landsdel_Data || {};
       state.regionData   = state.fullData[state.incomeType].Region_Data;
       state.muniData     = state.fullData[state.incomeType].Municipality_Data;
       renderLayer();
@@ -642,7 +643,11 @@
     document.getElementById("year-select").addEventListener("change", e => {
       state.year = e.target.value;
       // Drop selections that no longer have data in the new year.
-      const dict = state.layer === "munis" ? state.muniData : state.regionData;
+      const dict = state.layer === "country"
+        ? state.landsdelData
+        : state.layer === "munis"
+          ? state.muniData
+          : state.regionData;
       const valid = dict[state.year] ?? {};
       [...state.selected].forEach(n => {
         if (!valid[n]) state.selected.delete(n);
