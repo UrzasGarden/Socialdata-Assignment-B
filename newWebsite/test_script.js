@@ -10,7 +10,7 @@ try {
   state.meta.Income_Types.forEach(inc => {
     // simulated append
   });
-  const defaultIncome = state.meta.Income_Types.includes("Disposable") ? "Disposable" : state.meta.Income_Types[0];
+  const defaultIncome = state.meta.Income_Types.includes("Wages/salary") ? "Wages/salary" : state.meta.Income_Types[0];
   state.incomeType = defaultIncome;
 
   state.nationalData = state.fullData[state.incomeType].National_Data;

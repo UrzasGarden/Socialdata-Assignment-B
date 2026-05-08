@@ -37,7 +37,8 @@
   };
 
   // Whichever field on a GeoJSON feature.properties holds the join key for
-  // each layer. landsdel has no data in our JSON so it's treated as context.
+  // each layer. landsdel/subregions has no data in our JSON so it's treated
+  // as context in the current explorer build.
   const NAME_FIELD = {
     country: "navn",       // landsdel.geojson: "Østjylland", "Bornholm", ...
     regions: "name",       // regions.json:    "Hovedstaden", "Sjælland", ...
@@ -58,8 +59,9 @@
   // -----------------------------------------------------------------------
   const state = {
     meta: null,
-    fullData: null,          // Complete nested structure: { [IncomeType]: { National_Data, Region_Data, Muni_Data } }
+    fullData: null,          // Complete nested structure: { [IncomeType]: { National_Data, Landsdel_Data, Region_Data, Municipality_Data } }
     nationalData: null,
+    landsdelData: null,
     regionData: null,        // Pointer to current income type's Region_Data
     muniData:   null,
     geo: { country: null, regions: null, munis: null },
@@ -90,7 +92,7 @@
 
     state.meta         = agg.Metadata;
     state.fullData     = agg.Data;
-    // We will initialize nationalData, regionData, and muniData in populateControls()
+    // We will initialize nationalData, landsdelData, regionData, and muniData in populateControls()
     state.geo.country = country;
     state.geo.regions = regions;
     state.geo.munis   = munis;
@@ -111,12 +113,13 @@
       opt.textContent = inc;
       incomeSel.appendChild(opt);
     });
-    const defaultIncome = state.meta.Income_Types.includes("Disposable") ? "Disposable" : state.meta.Income_Types[0];
+    const defaultIncome = state.meta.Income_Types.includes("Wages/salary") ? "Wages/salary" : state.meta.Income_Types[0];
     incomeSel.value = defaultIncome;
     state.incomeType = defaultIncome;
 
     // Set initial pointers
     state.nationalData = state.fullData[state.incomeType].National_Data;
+    state.landsdelData = state.fullData[state.incomeType].Landsdel_Data || {};
     state.regionData   = state.fullData[state.incomeType].Region_Data;
     state.muniData     = state.fullData[state.incomeType].Municipality_Data;
 
@@ -173,10 +176,7 @@
       const dp = state.muniData[state.year]?.[key]?.[state.education] ?? null;
       return { name: key, dp };
     }
-    // "country" layer = landsdele. All 11 share the same national figure so
-    // every feature gets the same dp — giving Denmark a uniform choropleth
-    // colour based on the real national gap for the current education/year.
-    const dp = state.nationalData?.[state.year]?.[state.education] ?? null;
+    const dp = state.landsdelData?.[state.year]?.[rawName]?.[state.education] ?? null;
     return { name: rawName, dp };
   }
 
@@ -206,16 +206,13 @@
     return [parseInt(v.slice(0,2), 16), parseInt(v.slice(2,4), 16), parseInt(v.slice(4,6), 16)];
   }
 
-  /** Compute min/max gap to anchor the colour scale and legend.
-   *  For the "country" layer we use the region domain so the national gap
-   *  gets a meaningful colour relative to regional variation. */
+  /** Compute min/max gap to anchor the colour scale and legend. */
   function gapDomain(layerKey) {
-    const domainKey = layerKey === "country" ? "regions" : layerKey;
-    const fc = state.geo[domainKey];
+    const fc = state.geo[layerKey];
     if (!fc) return [0, 0];
     const gaps = [];
     fc.features.forEach(f => {
-      const r = lookupFeature(f, domainKey);
+      const r = lookupFeature(f, layerKey);
       if (r?.dp?.Gap != null) gaps.push(r.dp.Gap);
     });
     if (!gaps.length) return [0, 0];
@@ -241,7 +238,7 @@
 
     const legendLabel = document.querySelector("#map-legend .legend-label");
     if (legendLabel) {
-      legendLabel.textContent = `${state.incomeType || 'Disposable'} income gap (M − W, 2024 DKK)`;
+      legendLabel.textContent = `${state.incomeType || 'Wages/salary'} gap (M − W, 2024 DKK)`;
     }
 
     // municipalities_clean.geojson already has exactly 99 dissolved features
@@ -267,21 +264,9 @@
         const { name, dp } = lookupFeature(feature, layerKey) ?? {};
         if (!name) return;
 
-        // "Whole Country" landsdele are non-selectable — they all share the
-        // same national figure. Tooltip shows the landsdel name + national stats.
-        if (layerKey === "country") {
-          lyr.bindTooltip(buildTooltip(`Denmark (${escapeHtml(name)})`, dp),
-            { sticky: true, className: "map-popup" });
-          lyr.on("mouseover", e => {
-            e.target.setStyle({ fillOpacity: 0.95, color: "#ffffff", weight: 1.8 });
-            e.target.bringToFront();
-          });
-          lyr.on("mouseout", () => state.geoLayer.resetStyle(lyr));
-          return;
-        }
-
-        // Hover tooltip
-        lyr.bindTooltip(buildTooltip(name, dp), { sticky: true, className: "map-popup" });
+        // Hover tooltip (with special formatting for "country" layer)
+        const tooltipName = layerKey === "country" ? `Denmark (${escapeHtml(name)})` : name;
+        lyr.bindTooltip(buildTooltip(tooltipName, dp), { sticky: true, className: "map-popup" });
 
         lyr.on("mouseover", e => {
           if (dp) {
@@ -346,17 +331,12 @@
 
   /** Pull the current dataset for the chart based on selection + layer. */
   function getChartData() {
-    // "Whole Country" layer: return the single national data point.
-    if (state.layer === "country") {
-      const dp = state.nationalData?.[state.year]?.[state.education];
-      return {
-        layerKey: "country",
-        points: dp ? [{ name: "Denmark (National)", ...dp }] : [],
-      };
-    }
-
     const layerKey = state.layer;
-    const dataDict = layerKey === "regions" ? state.regionData : state.muniData;
+    const dataDict = layerKey === "country"
+      ? state.landsdelData
+      : layerKey === "regions"
+        ? state.regionData
+        : state.muniData;
     const yearMap  = dataDict[state.year] ?? {};
 
     // If anything is selected, restrict to that. Otherwise use every area
@@ -393,17 +373,21 @@
     canvas.classList.remove("hidden");
 
     const { layerKey, points } = getChartData();
-    const layerLabel = layerKey === "regions" ? "Regions" : "Municipalities";
+    const layerLabel = {
+      country: "Subregions",
+      regions: "Regions",
+      munis: "Municipalities",
+    }[layerKey] || "Areas";
 
     let titlePrefix = "Income Gap";
-    let subtitleText = `${state.incomeType || 'Disposable'} income gap, ${state.year} DKK (CPI-adjusted to 2024)`;
+    let subtitleText = `${state.incomeType || 'Wages/salary'} gap, ${state.year} DKK (CPI-adjusted to 2024)`;
 
     if (state.metric === "compare") {
       titlePrefix = "Men vs Women Income";
-      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, ${state.year} DKK (CPI-adjusted to 2024)`;
+      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'Wages/salary'} income, ${state.year} DKK (CPI-adjusted to 2024)`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Income Gap (%)";
-      subtitleText = `${state.incomeType || 'Disposable'} income gap as % of women's income, ${state.year}`;
+      subtitleText = `${state.incomeType || 'Wages/salary'} gap as % of women's income, ${state.year}`;
     }
 
     titleEl.textContent =
@@ -503,7 +487,11 @@
 
   /** Line chart = trend across ALL years for each chosen area. */
   function renderLine(canvas, layerKey, points) {
-    const dataDict = layerKey === "regions" ? state.regionData : state.muniData;
+    const dataDict = layerKey === "country"
+      ? state.landsdelData
+      : layerKey === "regions"
+        ? state.regionData
+        : state.muniData;
     const years = state.meta.Years_Available;
     const palette = [ACCENT_BLUE, ACCENT_PINK, ACCENT_PURPLE, "#34d399", "#fbbf24", "#f87171"];
 
@@ -569,14 +557,14 @@
     });
 
     let titlePrefix = "Gap Trend";
-    let subtitleText = `${state.incomeType || 'Disposable'} income gap (Men − Women), 2024 DKK · ${areas.length} areas`;
+    let subtitleText = `${state.incomeType || 'Wages/salary'} gap (Men − Women), 2024 DKK · ${areas.length} areas`;
     
     if (state.metric === "compare") {
       titlePrefix = "Men vs Women Trend";
-      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, 2024 DKK · ${areas.length} areas`;
+      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'Wages/salary'}, 2024 DKK · ${areas.length} areas`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Gap Trend (%)";
-      subtitleText = `${state.incomeType || 'Disposable'} income gap as % of women's income · ${areas.length} areas`;
+      subtitleText = `${state.incomeType || 'Wages/salary'} gap as % of women's income · ${areas.length} areas`;
     }
 
     document.getElementById("chart-title").textContent =
@@ -639,6 +627,7 @@
     document.getElementById("income-select").addEventListener("change", e => {
       state.incomeType = e.target.value;
       state.nationalData = state.fullData[state.incomeType].National_Data;
+      state.landsdelData = state.fullData[state.incomeType].Landsdel_Data || {};
       state.regionData   = state.fullData[state.incomeType].Region_Data;
       state.muniData     = state.fullData[state.incomeType].Municipality_Data;
       renderLayer();
@@ -654,7 +643,11 @@
     document.getElementById("year-select").addEventListener("change", e => {
       state.year = e.target.value;
       // Drop selections that no longer have data in the new year.
-      const dict = state.layer === "munis" ? state.muniData : state.regionData;
+      const dict = state.layer === "country"
+        ? state.landsdelData
+        : state.layer === "munis"
+          ? state.muniData
+          : state.regionData;
       const valid = dict[state.year] ?? {};
       [...state.selected].forEach(n => {
         if (!valid[n]) state.selected.delete(n);

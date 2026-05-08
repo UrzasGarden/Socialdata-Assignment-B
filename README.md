@@ -25,7 +25,7 @@ This repository contains:
 ## Quick Start
 
 ### Option 1: Open directly in browser
-1. Open [index.html](index.html) in your browser.
+1. Open https://urzasgarden.github.io/Socialdata-Assignment-B/index.html in your browser.
 
 ### Option 2: Run a local static server (recommended)
 From the project root, run one of these commands:
