@@ -111,7 +111,7 @@
       opt.textContent = inc;
       incomeSel.appendChild(opt);
     });
-    const defaultIncome = state.meta.Income_Types.includes("Disposable") ? "Disposable" : state.meta.Income_Types[0];
+    const defaultIncome = state.meta.Income_Types.includes("Wages/salary") ? "Wages/salary" : state.meta.Income_Types[0];
     incomeSel.value = defaultIncome;
     state.incomeType = defaultIncome;
 
@@ -241,7 +241,7 @@
 
     const legendLabel = document.querySelector("#map-legend .legend-label");
     if (legendLabel) {
-      legendLabel.textContent = `${state.incomeType || 'Disposable'} income gap (M − W, 2024 DKK)`;
+      legendLabel.textContent = `${state.incomeType || 'Wages/salary'} gap (M − W, 2024 DKK)`;
     }
 
     // municipalities_clean.geojson already has exactly 99 dissolved features
@@ -267,21 +267,9 @@
         const { name, dp } = lookupFeature(feature, layerKey) ?? {};
         if (!name) return;
 
-        // "Whole Country" landsdele are non-selectable — they all share the
-        // same national figure. Tooltip shows the landsdel name + national stats.
-        if (layerKey === "country") {
-          lyr.bindTooltip(buildTooltip(`Denmark (${escapeHtml(name)})`, dp),
-            { sticky: true, className: "map-popup" });
-          lyr.on("mouseover", e => {
-            e.target.setStyle({ fillOpacity: 0.95, color: "#ffffff", weight: 1.8 });
-            e.target.bringToFront();
-          });
-          lyr.on("mouseout", () => state.geoLayer.resetStyle(lyr));
-          return;
-        }
-
-        // Hover tooltip
-        lyr.bindTooltip(buildTooltip(name, dp), { sticky: true, className: "map-popup" });
+        // Hover tooltip (with special formatting for "country" layer)
+        const tooltipName = layerKey === "country" ? `Denmark (${escapeHtml(name)})` : name;
+        lyr.bindTooltip(buildTooltip(tooltipName, dp), { sticky: true, className: "map-popup" });
 
         lyr.on("mouseover", e => {
           if (dp) {
@@ -396,14 +384,14 @@
     const layerLabel = layerKey === "regions" ? "Regions" : "Municipalities";
 
     let titlePrefix = "Income Gap";
-    let subtitleText = `${state.incomeType || 'Disposable'} income gap, ${state.year} DKK (CPI-adjusted to 2024)`;
+    let subtitleText = `${state.incomeType || 'Wages/salary'} gap, ${state.year} DKK (CPI-adjusted to 2024)`;
 
     if (state.metric === "compare") {
       titlePrefix = "Men vs Women Income";
-      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, ${state.year} DKK (CPI-adjusted to 2024)`;
+      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'Wages/salary'} income, ${state.year} DKK (CPI-adjusted to 2024)`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Income Gap (%)";
-      subtitleText = `${state.incomeType || 'Disposable'} income gap as % of women's income, ${state.year}`;
+      subtitleText = `${state.incomeType || 'Wages/salary'} gap as % of women's income, ${state.year}`;
     }
 
     titleEl.textContent =
@@ -569,14 +557,14 @@
     });
 
     let titlePrefix = "Gap Trend";
-    let subtitleText = `${state.incomeType || 'Disposable'} income gap (Men − Women), 2024 DKK · ${areas.length} areas`;
+    let subtitleText = `${state.incomeType || 'Wages/salary'} gap (Men − Women), 2024 DKK · ${areas.length} areas`;
     
     if (state.metric === "compare") {
       titlePrefix = "Men vs Women Trend";
-      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'disposable'} income, 2024 DKK · ${areas.length} areas`;
+      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'Wages/salary'}, 2024 DKK · ${areas.length} areas`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Gap Trend (%)";
-      subtitleText = `${state.incomeType || 'Disposable'} income gap as % of women's income · ${areas.length} areas`;
+      subtitleText = `${state.incomeType || 'Wages/salary'} gap as % of women's income · ${areas.length} areas`;
     }
 
     document.getElementById("chart-title").textContent =

@@ -8,7 +8,7 @@ Output:  dashboard_aggregation.json
 Pipeline:
   1. Load only the columns we need with explicit dtypes.
   2. Filter to ENHED = "Gennemsnit for alle personer (kr.)" and to the
-     disposable-income line ("1 Disponibel indkomst (2+30-31-32-35)").
+     wages/salary line ("4 Wages/salary").
   3. Adjust nominal DKK -> 2024 DKK using hardcoded Danish CPI multipliers.
   4. Pivot Men / Women rows side-by-side and compute Gap = Men - Women.
   5. Group by (year, area, education) and write a nested JSON document
