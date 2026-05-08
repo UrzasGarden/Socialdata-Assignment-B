@@ -4,12 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Rise and Fall of Crime in San Francisco | Data Story</title>
+    <title>Denmark's Equality Paradox | Data Story</title>
     <meta name="description"
-                                                                                                        content="An interactive data story exploring two decades of crime patterns in San Francisco, from 2003 to 2024.">
+        content="An interactive data story exploring Denmark's gender pay gap and education paradox, using two decades of Statistics Denmark data.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-                                                                                                        crossorigin="" />
     <style>
         html {
             scroll-behavior: smooth;
@@ -91,13 +89,8 @@
         }
 
         @keyframes float {
-            0% {
-                transform: translate(0, 0) scale(1);
-            }
-
-            100% {
-                transform: translate(10%, 10%) scale(1.1);
-            }
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(10%, 10%) scale(1.1); }
         }
 
         /* Navigation */
@@ -123,7 +116,7 @@
             transition: color 0.3s;
         }
 
-        nav a:hover {
+        nav a:hover, nav a.active {
             color: var(--text-primary);
         }
 
@@ -150,7 +143,7 @@
         .hero h1 {
             font-size: clamp(2rem, 5vw, 3.2rem);
             font-weight: 700;
-            background: linear-gradient(135deg, #fff 0%, #cbd5e1 50%, var(--accent-3) 100%);
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 50%, var(--accent-1) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -174,6 +167,69 @@
             opacity: 0.7;
         }
 
+        /* Stat Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 2.5rem 0;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            background: var(--glass-hover);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .stat-card h3 {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .trend-indicator {
+            font-size: 0.78rem;
+            font-weight: 500;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+        }
+
+        .trend-indicator.up {
+            background: rgba(34, 197, 94, 0.15);
+            color: #86efac;
+        }
+
+        .trend-indicator.down {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+        }
+
+        .trend-indicator.neutral {
+            background: rgba(148, 163, 184, 0.15);
+            color: #cbd5e1;
+        }
+
         /* Prose */
         .prose {
             font-size: 1.05rem;
@@ -191,8 +247,22 @@
         }
 
         .prose em {
-            color: var(--accent-3);
+            color: var(--accent-1);
             font-style: italic;
+        }
+
+        .prose ul {
+            padding-left: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .prose li {
+            margin-bottom: 0.4rem;
+            color: var(--text-secondary);
+        }
+
+        .prose li strong {
+            color: var(--text-primary);
         }
 
         .cite-link {
@@ -259,67 +329,6 @@
             display: block;
         }
 
-        .viz-container .map-frame {
-            height: 450px;
-        }
-
-        .linked-map-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 1rem;
-            padding: 1.2rem;
-        }
-
-        .map-panel {
-            background: rgba(10, 11, 16, 0.45);
-            border: 1px solid var(--glass-border);
-            border-radius: 14px;
-            overflow: hidden;
-        }
-
-        .map-panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-            padding: 0.75rem 0.9rem;
-            border-bottom: 1px solid var(--glass-border);
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .map-panel-header strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        .district-pill {
-            display: inline-block;
-            background: rgba(59, 130, 246, 0.2);
-            color: #bfdbfe;
-            border: 1px solid rgba(59, 130, 246, 0.45);
-            border-radius: 999px;
-            padding: 0.15rem 0.6rem;
-            font-size: 0.72rem;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-
-        .interactive-map {
-            width: 100%;
-            height: 420px;
-            background: #0b1220;
-        }
-
-        .map-status {
-            padding: 0.65rem 0.9rem;
-            border-top: 1px solid var(--glass-border);
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            min-height: 2.4rem;
-        }
-
         /* Figure Caption */
         .caption {
             padding: 1.25rem 1.75rem;
@@ -361,6 +370,31 @@
             color: var(--accent-2);
         }
 
+        /* CTA */
+        .cta-wrapper {
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 0.85rem 2.2rem;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            color: #fff;
+            text-decoration: none;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 0.02em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.45);
+        }
+
         /* References */
         .references {
             margin-top: 4rem;
@@ -397,44 +431,6 @@
             border-color: var(--accent-1);
         }
 
-        /* Contributions */
-        .contributions {
-            margin-top: 3rem;
-            opacity: 0.6;
-        }
-
-        .contributions h3 {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .contributions-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .contributions-table th, .contributions-table td {
-            border: 1px solid var(--glass-border);
-            padding: 0.4rem;
-            text-align: center;
-        }
-
-        .contributions-table th:first-child, .contributions-table td:first-child {
-            text-align: left;
-            padding-left: 0.8rem;
-        }
-
-        .contributions-table th {
-            background: rgba(0, 0, 0, 0.2);
-            font-weight: 500;
-        }
-
         /* Footer */
         footer {
             text-align: center;
@@ -459,16 +455,12 @@
                 font-size: 1.8rem;
             }
 
-            .viz-container iframe {
-                height: 400px;
-            }
-
-            .linked-map-grid {
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
 
-            .interactive-map {
-                height: 360px;
+            .viz-container iframe {
+                height: 400px;
             }
         }
     </style>
@@ -482,469 +474,239 @@
     </div>
 
     <nav>
-        <span class="nav-brand">SF Crime</span>
-        <!--<a href="index.html">Dashboard</a>-->
-        <a href="story.html" style="color: var(--text-primary);">Data Story</a>
+        <span class="nav-brand">Denmark's Equality Paradox</span>
+        <a href="story.html" class="active">Data Story</a>
+        <a href="website/explore.html">Dashboard</a>
     </nav>
 
     <article class="article">
 
         <!-- HERO -->
         <header class="hero">
-            <h1>The Rise and Fall of Crime in San Francisco</h1>
+            <h1>Denmark's Equality Paradox</h1>
             <p class="subtitle">
-                Looking at two decades of SF police data to see what recessions, pandemics, and policy changes actually
-                did to drug offense numbers, and why those numbers can be misleading.
+                Equal on paper. Equal in practice? Two decades of data reveal what Denmark's gender equality rankings
+                aren't telling you.
             </p>
-            <p class="byline">02806 Social Data Analysis &amp; Visualization · Assignment 2 Data Story</p>
+            <p class="byline">INDKP107 — Statistics Denmark · Interactive Data Visualizations for Assignment 2</p>
         </header>
 
         <!-- INTRODUCTION -->
         <section class="prose">
             <p>
-                San Francisco, like many other U.S. cities, saw decreases in several major crime categories in 2025,
-                including homicides, aggravated assaults, and robberies. According to Mission Local <a href="#ref-2"
-                                                                                                                    class="cite-link">[2]</a>,
-                overall crime declined, but drug offences did not follow this trend. San Francisco's drug
-                offence rate increase was the highest of the 19 cities studied in their analysis.
+                Denmark sits near the top of almost every international ranking of gender equality. It scores 71.8 out
+                of 100 on the European Institute for Gender Equality's index <a href="#ref-3" class="cite-link">[3]</a>,
+                and foreign articles often describe it as a country where women work, men share childcare, and the pay
+                gap has been solved.
             </p>
             <p>
-                Overdose death rates in San Francisco are higher than both California and the U.S. on average,
-                highlighting a serious drug related public‑health crisis.
-                Data from the San Francisco Chronicle
-                <a href="#ref-3" class="cite-link">[3]</a> shows that from 2018 to mid‑2025, San Francisco’s monthly
-                overdose death
-                rate was consistently higher through all years. This highlights how drug use and drug
-                markets in San Francisco differ notably from other states and helps explain why drug‑related incidents
-                remain a major concern.
+                <strong>The numbers tell a different story.</strong>
             </p>
             <p>
-                The police department
-                incident reports <a href="#ref-1" class="cite-link">[1]</a> from 2003 to 2025 can be used to investigate
-                how drug
-                offences have changed over time and whether major events such as the <a href="https://en.wikipedia.org/wiki/2008_financial_crisis"
-                                                                                                                    target="_blank"
-                                                                                                                    style="color: var(--accent-1);">2008
-                    financial crisis</a>, the 2016 legalisation of <a href="https://en.wikipedia.org/wiki/2016_California_Proposition_64"
-                                                                                                                    target="_blank"
-                                                                                                                    style="color: var(--accent-1);">recreational
-                    marijuana</a>, or the <a href="https://da.wikipedia.org/wiki/COVID-19" target="_blank"
-                                                                                                                    style="color: var(--accent-1);">COVID‑19
-                    pandemic</a> may have influenced these patterns.
+                In 2024, Danish women earned on average 12.9% less than men <a href="#ref-2"
+                    class="cite-link">[2]</a>, and Denmark has not been in the top 10 of the Evolution of Global Gender
+                Gap Index since 2014 <a href="#ref-4" class="cite-link">[4]</a>. And this is happening in a country
+                where young women are now clearly more educated than young men — 59% of women aged 25–34 hold a
+                higher-education degree, compared to just 44% of men <a href="#ref-5" class="cite-link">[5]</a>.
             </p>
             <p>
-                Next, an examination of spacial patterns of drug offences across San Francisco district. By comparing
-                regions, we
-                aim to identify trends, hotspots, and differences between districts, and clarify how the data might
-                easily appear misleading.
+                If Danish women are more educated than men, why do they still earn less — and does this look the same
+                everywhere in Denmark?
             </p>
             <p>
-                Lastly, utilizing the rich category information in the dataset, the drug offences can be broken down by
-                substance type to gain a
-                clearer picture of how the drugs involved in reported incidents has evolved over time.
-                This helps the understanding of whether the increase in drug offences is driven by mentioned external
-                factors,
-                or rather specific substance trends.
+                Denmark is small, but it is not uniform. Average wages in a parish north of Copenhagen can be more than
+                400,000 DKK higher than in a rural parish in Lolland or western Jutland <a href="#ref-8"
+                    class="cite-link">[8]</a>. Equality, it turns out, has a postcode.
             </p>
-
-        </section>
-
-        <!-- SECTION 1: YEARLY TREND -->
-        <div class="section-header">
-            <h2>Drug Offenses Over Time</h2>
-            <div class="section-line"></div>
-        </div>
-
-        <section class="prose">
             <p>
-                The figure below shows drug offenses reported to SFPD (San Francisco Police Department) per year, broken
-                down by police district. It
-                highlights key historical events to visualize their impact on the rate of reports.
+                Using two decades of official data from Statistics Denmark (2004–2024) <a href="#ref-1"
+                    class="cite-link">[1]</a>, covering every municipality, every education level, and both genders, we
+                aim to answer three questions:
+            </p>
+            <ul>
+                <li><strong>Does education pay off equally</strong> for men and women in different parts of Denmark?</li>
+                <li><strong>What role does education level play</strong> in driving economic equality (or inequality)
+                    across regions?</li>
+                <li><strong>Are women actually overtaking men</strong>, in both education and income, or only in one of
+                    them?</li>
+            </ul>
+            <p>
+                We have built this story as a martini glass <a href="#ref-9" class="cite-link">[9]</a>. First, we walk
+                you through the national picture — the big trends that shape the debate. Then the site opens up and
+                hands the controls over to you: pick a municipality, pick an education level, pick a year, and see what
+                the data says about your corner of Denmark.
             </p>
         </section>
 
-        <figure class="viz-container">
-            <img src="data/yearly_trend.png"
-                                                                                                                alt="Stacked area chart of drug offenses by district in San Francisco, showing marks for the 2008 financial crisis, SB 1449 and drug lab scandal in 2010, AB 109 in 2011, Prop 64 in 2016, COVID-19 in 2020, and the DMACC launch in 2023">
-            <figcaption class="caption">
-                <div class="caption-title">Figure 1 · Drug Offense over time by stacked districts and with historical
-                    events marked</div>
-                <p>Reported drug offenses in SF by year and district (2003-2025). Temporal trends are compared to the
-                    2008
-                    financial crisis, the SB 1449 & drug lab scandal in 2010, California's Public Safety Realignment
-                    Act (AB 109) in 2011, the legalization of
-                    recreational marijuana in 2016 (Prop 64), the onset of the COVID-19 pandemic in 2020, and the "all
-                    hands on deck" DMACC launch in 2023.</p>
-            </figcaption>
-        </figure>
-
-        <section class="prose">
-            <p>
-                As can be seen on <strong>Figure 1</strong>, reported drug offenses peaked between 2007 and
-                2009, closely aligning with the 2008 financial crisis. Following this peak, the data exhibits a steep
-                decline driven by a combination of legislative changes and local challenges. In 2010, the
-                passage of <a href="https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=200920100SB1449"
-                                                                                                                    target="_blank"
-                                                                                                                    style="color: var(--accent-1);">SB
-                    1449</a> downgraded the possession of under 28.5 grams
-                of marijuana from a misdemeanor to a mere infraction.
-                At the same time, a tampering scandal <a href="#ref-7" class="cite-link">[7]</a> forced the closure of
-                the San Francisco police drug lab,
-                compelling officers to rely on inexpensive field tests and deterring the costly use of out-of-county
-                testing facilities. This drop in reporting was further compounded by
-                significant staffing reductions and the
-                implementation of California's <a href="https://www.wsj.com/articles/SB10000872396390444226904577559243414878630"
-                                                                                                                    target="_blank"
-                                                                                                                    style="color: var(--accent-1);">Public
-                    Safety Realignment Act (AB 109)</a>, which prompted the city to shift
-                enforcement priorities away from drug offenses and toward violent crime.
-            </p>
-            <p>
-                However, the most dramatic structural shift occurred immediately after 2016 with the passage of
-                <a href="https://cannabis.lacity.gov/articles/california-cannabis-historical-timeline#:~:text=On%20November%208%2C%202016%2C%20California,fifth%20state%20to%20do%20so."
-                                                                                                                    target="_blank"
-                                                                                                                    style="color: var(--accent-1);">Proposition
-                    64</a>, which legalized recreational marijuana in California,
-                visable as a further drop in recorded incidents.
-                The onset of the COVID-19 pandemic and subsequent lockdowns in 2020 caused another noticeable dip before
-                the sharp resurgence observed in recent years. This sudden rise in reported offenses is driven by a
-                massive
-                shift in enforcement strategy rather than an overnight surge in crime. Driven to a breaking point by
-                open-air drug markets,
-                SF leaders actively sought outside assistance. This led to the launch of the
-                <a href="https://www.sanfranciscopolice.org/stay-safe/crime-data/drug-market-agency-coordination-center"
-                                                                                                                    target="_blank"
-                                                                                                                    style="color: var(--accent-1);">Drug
-                    Market Agency Coordination Center (DMACC)</a>
-                in 2023 and a federal <a href="https://missionlocal.org/2023/11/feds-tout-new-all-hands-on-deck-approach-to-sf-drug-dealing/"
-                                                                                                                    target="_blank"
-                                                                                                                    style="color: var(--accent-1);">"all
-                    hands on deck"</a> crackdown.
-                The chart's steep upward trajectory after 2023 visually captures this renewed enforcement effort.
-            </p>
-            <p>
-                When breaking down the offenses by police district, the stacked chart reveals that the
-                <em>Tenderloin</em>
-                and <em>Mission</em> districts consistently account for the vast majority of these reports.
-                Interestingly, despite the significant fluctuations in
-                overall incident volume over these two decades, the relative proportion of offenses across districts
-                remains remarkably stable, suggesting that drug enforcement and activity hotspots are deeply ingrained
-                within the city's geography.
-            </p>
-        </section>
-        <!-- SECTION 2: CRIME MAP -->
-        <div class="section-header">
-            <h2>Where Crime Concentrates</h2>
-            <div class="section-line"></div>
-        </div>
-
-        <section class="prose">
-            <p>
-                As visualized by the stacked chart, crime is not spread evenly across the city,
-                as some districts have three to four times as many reports as others.
-                The map below (Figure 2) allows for a deeper understanding of this spatial drug offense distribution.
-                The left map shows each district's <em>drug offense ratio</em> relative to the city-wide baseline.
-                Click any district to update the district-level heatmap on the right, where detailed hotspot information
-                is displayed.
-            </p>
-        </section>
-
-        <figure class="viz-container">
-            <div class="linked-map-grid">
-                <div class="map-panel">
-                    <div class="map-panel-header">
-                        <strong>Drug Offense Ratio by District</strong>
-                        <span id="ratioMapSelected" class="district-pill">Select district</span>
-                    </div>
-                    <div id="ratioMap" class="interactive-map" aria-label="Drug offense ratio map"></div>
-                    <div class="map-status" id="ratioMapStatus">Loading district ratio map...</div>
-                </div>
-                <div class="map-panel">
-                    <div class="map-panel-header">
-                        <strong>Drug Offense Heatmap</strong>
-                        <span id="heatMapSelected" class="district-pill">-</span>
-                    </div>
-                    <div id="heatMap" class="interactive-map" aria-label="District drug offense heatmap"></div>
-                    <div class="map-status" id="heatMapStatus">Waiting for district selection...</div>
-                </div>
+        <!-- STAT CARDS -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Individuals Tracked</h3>
+                <div class="stat-value">5.84M</div>
+                <span class="trend-indicator up">+1.2% vs 2017</span>
             </div>
-            <figcaption class="caption">
-                <div class="caption-title">Figure 2 · Drug Ratio & District Heatmap (interactable)</div>
-                <p>Left: district-level drug offense ratio, computed as P(Drug Offense | district) / P(Drug Offense) for
-                    years 2003-2025.
-                </p>
-                <p>
-                    Right: heatmap of all recorded drug offense coordinates for the selected district. Click a district
-                    on the left map to update the right panel.</p>
-            </figcaption>
-        </figure>
+            <div class="stat-card">
+                <h3>Highest Income Region</h3>
+                <div class="stat-value">Gentofte</div>
+                <span class="trend-indicator neutral">Avg. 612,400 kr.</span>
+            </div>
+            <div class="stat-card">
+                <h3>Largest Gap Demographic</h3>
+                <div class="stat-value">28.4%</div>
+                <span class="trend-indicator down">M vs F, Long Higher Ed.</span>
+            </div>
+        </div>
 
-        <section class="prose">
-            <p>
-                Figure 2 confirms that drug offences are distributed very unevenly across San Francisco,
-                but it also shows why district-level summaries must be interpreted with caution.
-                The district "Mission" sits close to the citywide baseline and therefore serves as a useful
-                visual reference point for the rest of the city. Only Southern and Tenderloin show clearly higher
-                drug offence ratios, while all remaining districts fall below this level.
-                Tenderloin stands out as the most extreme case, with by far the highest relative concentration of
-                reported drug offences,
-                whereas Richmond has the lowest ratio in comparison.
-            </p>
-            <p>
-                At a first glance, the left (ratio) map seems very informative for determining which areas of San
-                Fransisco
-                has the highest drug related risks, but this district comparison could easily result in overly broad
-                conclusions.
-                For example, Southern appears to be one of the city's most affected districts and could therefore be
-                interpreted
-                as broadly unsafe. However, the district-level heatmap reveals a much more localized pattern.
-                Incidents are concentrated almost entirely on the mainland portion of Southern, while the small island
-                within the district records almost no offences. In this case, the district average hides a strong
-                internal separation that becomes obvious only when the point density (heatmap) is examined as well.
-            </p>
-            <p>
-                The district "Mission" provides a second example of the same problem. Although its overall ratio lies
-                near
-                the city baseline, the heatmap shows that drug offences are far from evenly spread across the district.
-                More specifically, the Castro Hill side of the district is only weakly represented in the incident data.
-                This means that even a district that appears “average” at the aggregated level can contain both highly
-                concentrated hotspots for drug offences as well as more quiet areas.
-            </p>
-            <p>
-                Together, the two maps highlight the risk of treating police districts as though they are uniform
-                within their boundaries. District-level ratios can be misleading when used to assess whether an area
-                is safe to visit, walk through, or live in. This also matters from a policy perspective, since
-                targeted policing or intervention strategies based only on district averages may overlook where the
-                risk is actually concentrated and instead direct attention too broadly or to the wrong locations.
-                The heatmap provides that missing local detail and makes clear that drug offences are distributed
-                far more unevenly than the district ratios alone suggest.
-            </p>
-            <p>
-                These spatial patterns show that the apparent geography of drug crime depends heavily on the level of
-                detail,
-                motivating a closer look at not just where drug offences appear, but more specifically what
-                kinds of drug offences are driving these trends over time.
-            </p>
-        </section>
-
-        <!-- SECTION 3: CATEGORY TRENDS -->
+        <!-- SECTION 1: PAY GAP OVER TIME -->
         <div class="section-header">
-            <h2>What's Changed: The Shifting Drug Mix</h2>
+            <h2>The Gender Pay Gap Over Time</h2>
             <div class="section-line"></div>
         </div>
 
         <section class="prose">
             <p>
-                Understanding how crime changes over time is not just about looking at total numbers;
-                it's about more detailed accounts of what <em>kinds</em> of crimes are being reported.
-                San Francisco's drug crime mix has shifted a lot over the past two decades,
-                and these changes reveal how policy decisions, drug markets, and policing priorities
-                can shape what ends up in the reported data.
-                Figure 3 below visualizes how 9 seperate drug categories have developed over time from 2003 to 2025.
+                The chart below tracks women's income relative to men's across all education levels from 2004 to 2024.
+                If the gap were closing, you would expect the lines to converge toward zero over time. What you see
+                instead is a persistent — and in some cases widening — divide.
             </p>
         </section>
 
         <figure class="viz-container">
-            <iframe src="drug_offenses_animated.html?v=20260406d" style="height: 525px;" scrolling="no"
-                                                                                                                title="Animated chart showing San Francisco drug offense trends by substance type"></iframe>
+            <img src="website/charts/chart1_time.png" alt="National income gap over time by education level" />
             <figcaption class="caption">
-                <div class="caption-title">Figure 3 · SF Drug Offenses by Substance Type</div>
-                <p>Animated line chart showing the share of total drug offenses in SF by substance type from 2003 to
-                    2025.
-                    Use the playback controls or the slider to explore how reports involving substances like
-                    Crack/Cocaine, Heroin, Marijuana, and Methamphetamine have shifted over the past two decades.</p>
+                <div class="caption-title">Figure 1 · Women's income compared to men (% less), by education level</div>
+                <p>The gender pay gap measured annually across all education levels. A value of 12% means women in that
+                    group earned 12% less than their male counterparts in the same year.</p>
             </figcaption>
         </figure>
 
         <section class="prose">
             <p>
-                To build this animated graph, the drug specific data was extracted directly from the SF Police
-                Department Incident dataset. Incidents categorised as a "Drug Offense" feature an additional
-                descriptive column detailing the specific reason for the resulting arrest or citation, such as
-                "marijuana”, "methamphetamine”, or "heroin".
-                However, because these descriptions have been recorded by different police officers over many years,
-                the text naturally exhibits a wide array of synonyms, shorthanded abbreviations and spelling errors. To
-                construct a reliable and consistent historical record, we have implemented a mapping process
-                using a custom classification script (checkMapping.py).
-                By manually reviewing the raw data entries, each description was sorted one by one and categorised into
-                standardised drug groups. This ensured that every single reported drug incident was accurately mapped
-                and accounted for, taking all errors into account and providing a clear view of how the
-                city's drug usage has shifted over time.
+                The gap has not disappeared — it has merely shifted shape. At every education level, women consistently
+                earn less than men. Notably, the gap is largest among those with long higher education degrees, reaching
+                28.4% at its peak. This is the education group where one might expect parity to be strongest, since both
+                men and women have invested heavily in credentials.
             </p>
             <p>
-                The plot shows a substantial shift in the composition of San Francisco drug offenses from 2003 to 2024,
-                with the balance moving away from cocaine/crack as the dominator and toward paraphernalia as the main
-                registred drug.
-            </p>
-            <p>
-                The clearest long-run decline is cocaine/crack which starts at roughly 35-40% of all drug offenses, then
-                trends downward
-                to a mere 6.8% by 2025. This suggests a major structural change in the offense profile over two decades:
-                cocaine/crack, once the largest component, is no longer central by the end of the series.
-                As methamphetamine becomes more central in national enforcement and overdose data,
-                a falling share for cocaine/crack does not necessarily mean cocaine vanished.
-                It means that other substances, especially methamphetamine, accounted for a larger fraction of all
-                recorded incidents.
-            </p>
-            <p>
-                The most drastic shift involves paraphernalia. After hovering at 15-25% for years, it skyrocketed to
-                nearly half of all offenses by 2025. This large increase reflects a sharp change in enforcement and not
-                necessarily a surge in usage. Historically the municipality's harm reduction focus meant paraphernalia
-                possession was largely "accepted" and rarely penalized. Recently, however, the mayor scaled
-                back these health programs <a href="#ref-11" class="cite-link">[11]</a> and launched aggressive
-                enforcement campaigns, including the 2025 "Breaking
-                the Cycle" order <a href="#ref-12" class="cite-link">[12]</a> and a crackdown on illicit
-                corner stores <a href="#ref-13" class="cite-link">[13]</a>. This targeted police focus suddenly turned a
-                previously ignored offense into the
-                city's primary drug charge. </p>
-            <p>
-                As the different drug types rise and fall over time, these shifts often reflect bigger changes
-                in policy, availability, and public-health trends. While marijuana-related offences declined after legalization in 2016,
-                other substances like <a href="https://sfstandard.com/2026/02/05/san-francisco-fentanyl-decade/"
-                                                                                                                    target="_blank"
-                                                                                                                    style="color: var(--accent-1);">fentanyl</a>,
-                continue to cause major problems in San Francisco. Initiatives such as the AB 109 realignment
-                and Proposition 47 reduced the incentive for officers to write up drug incidents in the same way,
-                even if actual drug activity stayed roughly the same, resulting in the numbers being possibly misleading.
+                The data covers twenty years of economic change, including the 2008 financial crisis and the post-2015
+                recovery. Despite these shifts, the gap across education groups remains remarkably stable — suggesting
+                structural forces rather than temporary circumstances are at work.
             </p>
         </section>
-        <!-- CONCLUSION -->
+
+        <!-- SECTION 2: EDUCATION PAYOFF -->
         <div class="section-header">
-            <h2>Conclusion</h2>
+            <h2>The Education Payoff</h2>
             <div class="section-line"></div>
         </div>
 
         <section class="prose">
             <p>
-                Two decades of San Francisco's drug records reveal a clear reality, incident data measures police
-                enforcement as much as it does criminal behavior. The recent spike in offenses, driven not by a new
-                epidemic but by a sudden crackdown on paraphernalia, demonstrates how swift policy changes can reshape
-                crime statistics. Geography tells a similar story, showing that sweeping district averages often mask
-                hyper localized realities. Ultimately understanding the city's true crime situation requires looking
-                past
-                the raw numbers to see the shifting political and policing priorities that write them.
+                More education generally means higher wages — but not equally for everyone. The chart below compares
+                average wages for men and women at each education level. It asks a simple question: do men and women
+                get the same financial return on the same educational investment?
             </p>
         </section>
-        <!-- CRITICAL NOTE -->
+
+        <figure class="viz-container">
+            <img src="website/charts/chart2_education.png" alt="Average wages by education level for men and women" />
+            <figcaption class="caption">
+                <div class="caption-title">Figure 2 · Average wages by education level (Men vs. Women)</div>
+                <p>Each bar pair shows the average annual income for men and women at each education level. The
+                    vertical gap between the two bars is the raw income difference — not a percentage, but actual
+                    kroner.</p>
+            </figcaption>
+        </figure>
+
+        <section class="prose">
+            <p>
+                The bars tell a clear story: at every education level, men out-earn women. The absolute gap — measured
+                in kroner — grows as education level increases. Someone with a basic education sees a smaller raw gap
+                than someone with a long higher education degree. In other words, <strong>the more you educate
+                yourself, the larger the absolute pay gap becomes</strong> — if you are a woman.
+            </p>
+            <p>
+                This is the core of the paradox. Denmark's women have outpaced men in university enrollment and
+                completion. Yet the labour market rewards those credentials less when they belong to a woman. The
+                education premium exists — it just applies unevenly.
+            </p>
+        </section>
+
+        <!-- SECTION 3: REGIONAL GAP -->
+        <div class="section-header">
+            <h2>Equality Has a Postcode</h2>
+            <div class="section-line"></div>
+        </div>
+
+        <section class="prose">
+            <p>
+                National averages hide enormous regional variation. The map below shows the income gap for workers with
+                long higher education degrees — the group with the largest overall gap — broken down by municipality.
+                Some parts of Denmark look very different from others.
+            </p>
+        </section>
+
+        <figure class="viz-container">
+            <img src="website/charts/chart3_region.png"
+                alt="Income gap for Long Higher Education across top Danish municipalities" />
+            <figcaption class="caption">
+                <div class="caption-title">Figure 3 · Regional gender gap — Long Higher Education, top municipalities
+                </div>
+                <p>The gender pay gap among workers with long higher education degrees, shown for municipalities with
+                    the largest populations in that education group. Values show women's earnings as a percentage below
+                    men's.</p>
+            </figcaption>
+        </figure>
+
+        <section class="prose">
+            <p>
+                The regional picture reveals that geography shapes the gap significantly. Gentofte — Denmark's highest
+                average income municipality — also shows one of the largest proportional gaps between men and women in
+                the highly educated bracket. Meanwhile, rural municipalities show different patterns entirely, often
+                because the population with long higher education degrees is small enough that individual employers
+                or sectors dominate the local average.
+            </p>
+            <p>
+                This matters for policy. A national-level equality initiative that treats Denmark as uniform will
+                misfire in many places. The gap in Gentofte is not the same problem as the gap in Lolland — even if
+                both show women earning less than men with the same qualifications.
+            </p>
+        </section>
+
         <div class="callout">
             <p>
-                <strong>A note on interpretation:</strong> Crime data only captures what gets <em>reported and
-                    recorded</em>, not what actually happens. Richardson et al. (2019) make this point well in their
-                work on predictive policing: changes in where police patrol, what they focus on, and how they classify
-                incidents can produce the same statistical signal as a real change in crime. The drug offense decline is
-                a textbook example. For any crime statistic, it is always worth asking: did the crime change, or did the
-                way it was recorded change?
+                <strong>The martini glass opens here.</strong> The three charts above give you the national picture.
+                Now it is your turn — explore the full dataset by municipality, education level, and year in the
+                interactive dashboard below.
             </p>
         </div>
 
-        <!-- CONTRIBUTIONS -->
-        <div class="contributions">
-            <h3>Contributions</h3>
-            <div style="overflow-x: auto;">
-                <table class="contributions-table">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>Intro</th>
-                            <th>Sec 1</th>
-                            <th>Sec 2</th>
-                            <th>Sec 3</th>
-                            <th>Conclusion</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Chelina</td>
-                            <td></td>
-                            <td>x</td>
-                            <td>x</td>
-                            <td>x</td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td>Andrea</td>
-                            <td>x</td>
-                            <td>x</td>
-                            <td></td>
-                            <td>x</td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td>Jonathan</td>
-                            <td></td>
-                            <td>x</td>
-                            <td></td>
-                            <td>x</td>
-                            <td>x</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <div class="cta-wrapper">
+            <a href="website/explore.html" class="cta-button">Explore Interactive Dashboard →</a>
         </div>
 
         <!-- REFERENCES -->
         <div class="references">
             <h3>References</h3>
             <ol>
-                <li id="ref-1">San Francisco Police Department. <em>Police Department Incident Reports</em>. DataSF Open
-                    Data
-                    Portal. <a href="https://data.sfgov.org" target="_blank">data.sfgov.org</a></li>
-                <li id="ref-2">Mission Local (2026). "Crime stats: SF drugs..." <a href="https://missionlocal.org/2026/01/crime-stats-drugs-sf/"
-                                                                                                                        target="_blank">missionlocal.org</a>
-                </li>
-                <li id="ref-3">San Francisco Chronicle (2025). "US Drug Overdose Deaths." <a href="https://www.sfchronicle.com/projects/us-drug-overdose-deaths/"
-                                                                                                                        target="_blank">sfchronicle.com</a>
-                </li>
-                <li id="ref-4">California Legislative Analyst's Office. <em>Proposition 47: The Safe Neighborhoods and
-                        Schools Act</em> (2014) and <em>Proposition 64: The Adult Use of Marijuana Act</em> (2016).
-                    <a href="https://lao.ca.gov/" target="_blank">lao.ca.gov</a>
-                </li>
-                <li id="ref-5">Segel, E. &amp; Heer, J. (2010). "Narrative Visualization: Telling Stories with Data."
-                    <em>IEEE
-                        Transactions on Visualization and Computer Graphics</em>.
-                </li>
-                <li id="ref-6">The Wall Street Journal (2012). "In San Francisco, a Shift on Crime Focus." <a href="https://www.wsj.com/articles/SB10000872396390444226904577559243414878630"
-                                                                                                                        target="_blank">wsj.com</a>
-                </li>
-                <li id="ref-7">The New York Times (2010). "San Francisco Police Drug Lab Is Shut Down." <a href="https://www.nytimes.com/2010/08/27/us/27bcdrug.html?unlocked_article_code=1.XFA.K4WX.tWwrA6QoBIcb&smid=url-share"
-                                                                                                                        target="_blank">nytimes.com</a>
-                </li>
-                <li id="ref-8">California Legislature (2010). <em>SB 1449: Marijuana possession.</em> <a href="https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=200920100SB1449"
-                                                                                                                        target="_blank">leginfo.legislature.ca.gov</a>
-                </li>
-                <li id="ref-9">San Francisco Police Department. "Drug Market Agency Coordination Center." <a href="https://www.sanfranciscopolice.org/stay-safe/crime-data/drug-market-agency-coordination-center"
-                                                                                                                        target="_blank">sanfranciscopolice.org</a>
-                </li>
-                <li id="ref-10">Mission Local (2023). "Feds tout new 'all hands on deck' approach to SF drug dealing."
-                    <a href="https://missionlocal.org/2023/11/feds-tout-new-all-hands-on-deck-approach-to-sf-drug-dealing/"
-                                                                                                                        target="_blank">missionlocal.org</a>
-                </li>
-                <li id="ref-11">KQED (2025). "San Francisco ends health programs for drug users not active in
-                    treatment."
-                    <a href="https://www.kqed.org/news/12034214/san-francisco-ends-health-programs-for-drug-users-not-active-in-treatment"
-                                                                                                                        target="_blank">kqed.org</a>
-                </li>
-                <li id="ref-12">City of San Francisco (2025). "Mayor Lurie Unveils 'Breaking the Cycle' Vision."
-                    <a href="https://www.sf.gov/news-mayor-lurie-unveils-breaking-the-cycle-vision-for-tackling-san-franciscos-homelessness-and-behavioral-health-crisis"
-                                                                                                                        target="_blank">sf.gov</a>
-                </li>
-                <li id="ref-13">City of San Francisco (2025). "City Attorney Cracks Down on Drug and Gambling Dens."
-                    <a href="https://www.sf.gov/news-city-attorney-cracks-down-on-drug-and-gambling-dens-fronting-as-convenience-stores"
-                                                                                                                        target="_blank">sf.gov</a>
-                </li>
+                <li id="ref-1"><a href="https://www.statistikbanken.dk/INDKP107" target="_blank">https://www.statistikbanken.dk/INDKP107</a></li>
+                <li id="ref-2"><a href="https://www.dst.dk/en/Statistik/temaer/ligestilling" target="_blank">https://www.dst.dk/en/Statistik/temaer/ligestilling</a></li>
+                <li id="ref-3"><a href="https://eige.europa.eu/gender-equality-index/2025/DK" target="_blank">https://eige.europa.eu/gender-equality-index/2025/DK</a></li>
+                <li id="ref-4"><a href="https://reports.weforum.org/docs/WEF_GGGR_2025.pdf" target="_blank">https://reports.weforum.org/docs/WEF_GGGR_2025.pdf</a></li>
+                <li id="ref-5"><a href="https://op.europa.eu/webpub/eac/education-and-training-monitor/en/country-reports/denmark.html" target="_blank">https://op.europa.eu/webpub/eac/education-and-training-monitor/en/country-reports/denmark.html</a></li>
+                <li id="ref-6"><a href="https://www.sciencedirect.com/science/article/pii/S0927537118301234?via%3Dihub" target="_blank">https://www.sciencedirect.com/science/article/pii/S0927537118301234?via%3Dihub</a></li>
+                <li id="ref-7"><a href="https://nordregio.org/maps/income-and-inequality-typology-2017/" target="_blank">https://nordregio.org/maps/income-and-inequality-typology-2017/</a></li>
+                <li id="ref-8"><a href="https://geolocet.com/blogs/news/income-distribution-across-danish-parishes" target="_blank">https://geolocet.com/blogs/news/income-distribution-across-danish-parishes</a></li>
+                <li id="ref-9">Segel, E., &amp; Heer, J. (2010). Narrative visualization: Telling stories with data. <em>IEEE Transactions on Visualization and Computer Graphics</em>, 16(6), 1139–1148.</li>
             </ol>
         </div>
 
     </article>
 
     <footer>
-        <p>Data Source: San Francisco Police Department · 02806 Social Data Analysis &amp; Visualization</p>
+        <p>Data sourced from INDKP107 — Statistics Denmark · INDKP107 Data Visualizations for Assignment 2</p>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-                                                                                                        crossorigin=""></script>
-    <script src="https://cdn.jsdelivr.net/gh/Leaflet/Leaflet.heat/dist/leaflet-heat.js"></script>
-    <script src="story-map.js"></script>
 </body>
 
 </html>
