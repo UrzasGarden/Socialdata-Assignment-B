@@ -26,6 +26,7 @@
   const ACCENT_BLUE   = "#3b82f6";
   const ACCENT_PURPLE = "#8b5cf6";
   const ACCENT_PINK   = "#ec4899";
+  const ACCENT_RED    = "#ef4444";
   const TEXT_PRIMARY  = "#e2e8f0";
   const TEXT_SECONDARY = "#94a3b8";
 
@@ -71,7 +72,7 @@
     year: null,              // selected year (string, e.g. "2024")
     layer: "regions",        // "country" | "regions" | "munis"
     chartType: "bar",        // "bar" | "line" | "table"
-    metric: "gap_abs",       // "gap_abs" | "men" | "women" | "gap_pct"
+    metric: "gap_pct",       // "gap_abs" | "men" | "women" | "gap_pct"
     selected: new Set(),     // selected area names (in their JSON-key form)
 
     map: null,
@@ -180,15 +181,22 @@
     return { name: rawName, dp };
   }
 
-  /** Linear hex interpolation along blue → purple → pink. */
+  function mapMetricValue(dp) {
+    if (!dp) return null;
+    if (state.metric === "gap_pct") {
+      return dp.Women ? (dp.Gap / dp.Women) * 100 : null;
+    }
+    return dp.Gap;
+  }
+
+  /** Linear hex interpolation along blue -> red. */
   function colorForGap(gap, min, max) {
     if (gap == null || !isFinite(gap)) return "rgba(255,255,255,0.05)";
     if (max <= min) return ACCENT_PURPLE;
     const t = Math.max(0, Math.min(1, (gap - min) / (max - min)));
     const stops = [
       { t: 0.0, c: hexToRgb(ACCENT_BLUE) },
-      { t: 0.5, c: hexToRgb(ACCENT_PURPLE) },
-      { t: 1.0, c: hexToRgb(ACCENT_PINK) },
+      { t: 1.0, c: hexToRgb(ACCENT_RED) },
     ];
     let a = stops[0], b = stops[stops.length - 1];
     for (let i = 0; i < stops.length - 1; i++) {
@@ -213,7 +221,8 @@
     const gaps = [];
     fc.features.forEach(f => {
       const r = lookupFeature(f, layerKey);
-      if (r?.dp?.Gap != null) gaps.push(r.dp.Gap);
+      const v = mapMetricValue(r?.dp);
+      if (v != null && isFinite(v)) gaps.push(v);
     });
     if (!gaps.length) return [0, 0];
     return [Math.min(...gaps), Math.max(...gaps)];
@@ -232,13 +241,17 @@
     const [gMin, gMax] = gapDomain(layerKey);
 
     // Update legend ticks.
-    document.getElementById("legend-min").textContent = gMax > gMin ? formatKr(gMin) : "—";
-    document.getElementById("legend-max").textContent = gMax > gMin ? formatKr(gMax) : "—";
+    document.getElementById("legend-min").textContent = gMax > gMin ? formatMetric(gMin) : "—";
+    document.getElementById("legend-max").textContent = gMax > gMin ? formatMetric(gMax) : "—";
     document.getElementById("map-legend").style.opacity = gMax > gMin ? "1" : "0.3";
 
     const legendLabel = document.querySelector("#map-legend .legend-label");
     if (legendLabel) {
-      legendLabel.textContent = `${state.incomeType || 'Wages/salary'} gap (M − W, 2024 DKK)`;
+      const incomeLabel = state.incomeType || "Wages/salary";
+      const yearLabel = state.year || "2024";
+      legendLabel.textContent = state.metric === "gap_pct"
+        ? `${incomeLabel} gap (% of women's income, ${yearLabel})`
+        : `${incomeLabel} gap (M − W, ${yearLabel} DKK)`;
     }
 
     // municipalities_clean.geojson already has exactly 99 dissolved features
@@ -250,10 +263,11 @@
       filter,
       style: feature => {
         const { dp, name } = lookupFeature(feature, layerKey) ?? {};
+        const metricValue = mapMetricValue(dp);
         const isSelected = name && state.selected.has(name);
-        const hasData = dp != null;
+        const hasData = metricValue != null;
         return {
-          fillColor: hasData ? colorForGap(dp.Gap, gMin, gMax) : "rgba(255,255,255,0.04)",
+          fillColor: hasData ? colorForGap(metricValue, gMin, gMax) : "rgba(255,255,255,0.04)",
           fillOpacity: hasData ? 0.78 : 0.12,
           color: isSelected ? "#ffffff" : hasData ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.1)",
           weight: isSelected ? 2.5 : 0.8,
@@ -262,6 +276,7 @@
       },
       onEachFeature: (feature, lyr) => {
         const { name, dp } = lookupFeature(feature, layerKey) ?? {};
+        const metricValue = mapMetricValue(dp);
         if (!name) return;
 
         // Hover tooltip (with special formatting for "country" layer)
@@ -269,7 +284,7 @@
         lyr.bindTooltip(buildTooltip(tooltipName, dp), { sticky: true, className: "map-popup" });
 
         lyr.on("mouseover", e => {
-          if (dp) {
+          if (metricValue != null) {
             e.target.setStyle({ weight: 2.2, color: "#ffffff" });
             e.target.bringToFront();
           }
@@ -277,7 +292,7 @@
         lyr.on("mouseout", () => state.geoLayer.resetStyle(lyr));
 
         // Only areas with data for the current filter are selectable.
-        if (dp) {
+        if (metricValue != null) {
           lyr.on("click", () => {
             if (state.selected.has(name)) state.selected.delete(name);
             else                          state.selected.add(name);
@@ -323,6 +338,15 @@
     if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(2) + "M kr.";
     if (Math.abs(v) >= 1_000)     return (v / 1_000).toFixed(0) + "k kr.";
     return Math.round(v) + " kr.";
+  }
+
+  function formatPct(v) {
+    if (v == null || !isFinite(v)) return "—";
+    return v.toFixed(1) + "%";
+  }
+
+  function formatMetric(v) {
+    return state.metric === "gap_pct" ? formatPct(v) : formatKr(v);
   }
 
   // -----------------------------------------------------------------------

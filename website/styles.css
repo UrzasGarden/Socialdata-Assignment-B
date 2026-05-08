@@ -7,7 +7,7 @@
     --glass-hover: rgba(255, 255, 255, 0.06);
     --accent-1: #3b82f6;
     --accent-2: #8b5cf6;
-    --accent-3: #ec4899;
+    --accent-3: #ef4444;
 }
 
 * {
@@ -60,7 +60,7 @@ body {
 .blob-3 {
     top: 40%; left: 40%;
     width: 40vw; height: 40vw;
-    background: radial-gradient(circle, rgba(236,72,153,0.1) 0%, rgba(10,11,16,0) 70%);
+    background: radial-gradient(circle, rgba(239,68,68,0.1) 0%, rgba(10,11,16,0) 70%);
     animation-delay: -5s;
     animation-duration: 18s;
 }
@@ -294,7 +294,7 @@ body {
 .cta-button:hover {
     transform: translateY(-3px) scale(1.02);
     box-shadow:
-        0 0 40px rgba(236, 72, 153, 0.55),
+        0 0 40px rgba(239, 68, 68, 0.55),
         0 0 80px rgba(139, 92, 246, 0.35),
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
@@ -652,7 +652,7 @@ body {
 .legend-bar {
     height: 10px;
     border-radius: 5px;
-    background: linear-gradient(90deg, var(--accent-1) 0%, var(--accent-2) 50%, var(--accent-3) 100%);
+    background: linear-gradient(90deg, #3b82f6 0%, #ef4444 100%);
 }
 
 .legend-ticks {

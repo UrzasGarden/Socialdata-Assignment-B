@@ -1,193 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Denmark's Equality Paradox</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="Main_page/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* Specific Styles for index.html Links */
-        .top-nav {
-            position: absolute;
-            top: 1.5rem;
-            right: 2rem;
-            display: flex;
-            gap: 1.5rem;
-            font-size: 0.95rem;
-            z-index: 200;
-        }
-        
-        .top-nav a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s ease;
-        }
-
-        .top-nav a:hover, .top-nav a.active {
-            color: #fff;
-        }
-
-        .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-            color: white;
-            padding: 1rem 2.5rem;
-            border-radius: 30px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .cta-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
-            color: white;
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="website/styles.css" />
 </head>
+
 <body>
 
-    <!-- Animated Background Blobs -->
     <div class="background-animation">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
         <div class="blob blob-3"></div>
     </div>
 
-    <!-- Glass Header with Top Right Navigation -->
     <header class="glass-header">
-        
-        <!-- TOP RIGHT LINKS -->
-        <nav class="top-nav">
-            <a href="index.html" class="active">Data Story</a>
-            <a href="Explore_page/explore.html">Dashboard</a>
-            <a href="newWebsite/index.html">NY HJEMMESIDE</a>
-        </nav>
-
         <div class="header-content">
             <h1>Denmark's Equality Paradox</h1>
             <p>Interactive INDKP107 Data Visualizations for Assignment 2</p>
         </div>
+        <nav class="header-nav">
+            <a href="index.html" class="active">Data Story</a>
+            <a href="website/explore.html">Dashboard</a>
+            <a href="story.html">Story</a>
+        </nav>
     </header>
 
-    <!-- Main Dashboard Container -->
     <main class="dashboard">
-        
-        <!-- Top Row: Summary Stat Cards -->
-        <div class="grid-container">
+
+        <section class="intro-section glass-card" style="margin-bottom: 2.5rem; line-height: 1.7;">
+            <h2
+                                                                                                                style="font-size: 2rem; margin-bottom: 1rem; background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Equal on paper. Equal in practice?</h2>
+            <p style="margin-bottom: 1rem;">Denmark sits near the top of almost every international ranking of gender
+                equality. It scores 71.8 out of 100 on the European Institute for Gender Equality's index [3], and
+                foreign articles often describe it as a country where women work, men share childcare, and the pay gap
+                has been solved [ref missing].</p>
+            <p style="margin-bottom: 1rem;">The numbers tell a different story.</p>
+
+            <p style="margin-bottom: 1rem;">In 2024, Danish women earned on average 12.9% less than men [2], and Denmark
+                has not been in top 10 in the Evolution of Global Gender Gap Index since 2014 [4]. And this is happening
+                in a country where young women are now clearly more educated than young men, 59% of women aged 25–34
+                hold a higher-education degree, compared to just 44% of men [5].</p>
+
+            <h3 style="margin-top: 1.8rem; margin-bottom: 0.5rem; color: #f8fafc; font-size: 1.3rem;">So here is the
+                puzzle we wanted to look at:</h3>
+            <p style="margin-bottom: 1rem;">If Danish women are more educated than men, why do they still earn less and
+                does this look the same everywhere in Denmark?</p>
+
+            <p style="margin-bottom: 1rem;">Denmark is small, but it is not uniform. Average wages in a
+                parish north of Copenhagen can be more than 400,000 DKK higher than in a rural parish in Lolland or
+                western Jutland [8]. Equality, it turns out, has a postcode.</p>
+
+            <h3 style="margin-top: 1.8rem; margin-bottom: 0.5rem; color: #f8fafc; font-size: 1.3rem;">What we did</h3>
+            <p style="margin-bottom: 0.5rem;">Using two decades of official data from Statistics Denmark (2004–2024)
+                [1], covering every municipality, every education level, and both genders, we aim to answer three
+                questions:</p>
+            <ul style="margin-top: 0.5rem; margin-bottom: 1rem; padding-left: 2rem; color: var(--text-secondary);">
+                <li style="margin-bottom: 0.3rem;"><strong style="color: var(--text-primary);">Does education pay off
+                        equally</strong> for men and women in different parts of Denmark?</li>
+                <li style="margin-bottom: 0.3rem;"><strong style="color: var(--text-primary);">What role does education
+                        level play</strong> in driving economic equality (or inequality) across regions?</li>
+                <li style="margin-bottom: 0.3rem;"><strong style="color: var(--text-primary);">Are women actually
+                        overtaking men</strong>, in both education and income, or only in one of them?</li>
+            </ul>
+
+            <h3 style="margin-top: 1.8rem; margin-bottom: 0.5rem; color: #f8fafc; font-size: 1.3rem;">How to read this
+                site</h3>
+            <p style="margin-bottom: 1rem;">We have built this story as a martini glass [9]. First, we walk you through
+                the national picture the big trends that shape the debate. Then the site opens up and hands the controls
+                over to you: pick a municipality, pick an education level, pick a year, and see what the data says about
+                your corner of Denmark.</p>
+            <p style="margin-top: 1.5rem; font-weight: 600; color: #fff; font-size: 1.1rem; text-align: center;">Denmark
+                may be equal on paper. Let's see what it looks like in practice.</p>
+        </section>
+
+        <section class="grid-container">
             <div class="glass-card stat-card">
                 <h3>Total Individuals Tracked</h3>
-                <div class="stat-value">2,451,092</div>
-                <div class="trend-indicator neutral">+ Exploring Data</div>
+                <div class="stat-value">5.84M</div>
+                <span class="trend-indicator up">+1.2% vs 2017</span>
             </div>
-            
             <div class="glass-card stat-card">
                 <h3>Highest Income Region</h3>
-                <div class="stat-value">Hovedstaden</div>
-                <div class="trend-indicator up">Capital Region</div>
+                <div class="stat-value">Gentofte</div>
+                <span class="trend-indicator neutral">Avg. 612,400 kr.</span>
             </div>
-            
             <div class="glass-card stat-card">
                 <h3>Largest Gap Demographic</h3>
-                <div class="stat-value">Master's Degree</div>
-                <div class="trend-indicator down">Historical Records</div>
+                <div class="stat-value">28.4%</div>
+                <span class="trend-indicator down">M vs F, Long Higher Ed.</span>
             </div>
-        </div>
+        </section>
 
-        <!-- Bottom Section: The Charts -->
-        <div class="charts-container">
-            
-            <!-- Main Full-Width Chart -->
+        <section class="charts-container">
             <div class="glass-card chart-card full-width">
                 <div class="card-header">
-                    <h2>National Income Gap Over Time</h2>
-                    <div class="subtitle">Historical average disposable income (Men vs Women)</div>
+                    <h2>The Gender Pay Gap Over Time</h2>
+                    <p class="subtitle">Women's income compared to men (% less), by education level</p>
                 </div>
                 <div class="chart-wrapper">
-                    <canvas id="mainChart"></canvas>
+                    <img src="website/charts/chart1_time.png" alt="National income gap over time" />
                 </div>
             </div>
+        </section>
 
-            <!-- Half-Width Chart 1 -->
+        <section class="charts-container">
             <div class="glass-card chart-card">
                 <div class="card-header">
-                    <h2>Income by Education</h2>
-                    <div class="subtitle">Mapped by education level</div>
+                    <h2>The Education Payoff</h2>
+                    <p class="subtitle">Average wages by education level (Men vs. Women)</p>
                 </div>
                 <div class="chart-wrapper">
-                    <canvas id="barChart"></canvas>
+                    <img src="website/charts/chart2_education.png" alt="Income by education level" />
                 </div>
             </div>
-
-            <!-- Half-Width Chart 2 -->
             <div class="glass-card chart-card">
                 <div class="card-header">
-                    <h2>Regional Distribution</h2>
-                    <div class="subtitle">Where do the largest gaps occur?</div>
+                    <h2>Regional Gender Gap</h2>
+                    <p class="subtitle">Income gap for Long Higher Education in top municipalities</p>
                 </div>
                 <div class="chart-wrapper">
-                    <canvas id="lineChart"></canvas>
+                    <img src="website/charts/chart3_region.png" alt="Regional income distribution" />
                 </div>
             </div>
+        </section>
 
+        <div class="cta-wrapper">
+            <a href="website/explore.html" class="cta-button">Explore Interactive Dashboard →</a>
         </div>
 
-        <!-- BOTTOM LINK / CALL TO ACTION -->
-        <div style="text-align: center; margin-top: 1rem; margin-bottom: 2rem;">
-            <a href="Explore_page/explore.html" class="cta-button">
-                Explore Interactive Dashboard &rarr;
-            </a>
-        </div>
+        <section class="references-section glass-card" style="margin-top: 2.5rem; font-size: 0.9rem; line-height: 1.6;">
+            <h3 style="margin-bottom: 1rem; color: #f8fafc; font-size: 1.2rem;">References</h3>
+            <ol style="padding-left: 1.5rem; color: var(--text-secondary);">
+                <li style="margin-bottom: 0.3rem;"><a href="https://www.statistikbanken.dk/INDKP107" target="_blank"
+                                                                                                                        style="color: var(--accent-1); text-decoration: none;">https://www.statistikbanken.dk/INDKP107</a>
+                </li>
+                <li style="margin-bottom: 0.3rem;"><a href="https://www.dst.dk/en/Statistik/temaer/ligestilling" target="_blank"
+                                                                                                                        style="color: var(--accent-1); text-decoration: none;">https://www.dst.dk/en/Statistik/temaer/ligestilling</a>
+                </li>
+                <li style="margin-bottom: 0.3rem;"><a href="https://eige.europa.eu/gender-equality-index/2025/DK" target="_blank"
+                                                                                                                        style="color: var(--accent-1); text-decoration: none;">https://eige.europa.eu/gender-equality-index/2025/DK</a>
+                </li>
+                <li style="margin-bottom: 0.3rem;"><a href="https://reports.weforum.org/docs/WEF_GGGR_2025.pdf" target="_blank"
+                                                                                                                        style="color: var(--accent-1); text-decoration: none;">https://reports.weforum.org/docs/WEF_GGGR_2025.pdf</a>
+                </li>
+                <li style="margin-bottom: 0.3rem;"><a href="https://op.europa.eu/webpub/eac/education-and-training-monitor/en/country-reports/denmark.html"
+                                                                                                                        target="_blank"
+                                                                                                                        style="color: var(--accent-1); text-decoration: none;">https://op.europa.eu/webpub/eac/education-and-training-monitor/en/country-reports/denmark.html</a>
+                </li>
+                <li style="margin-bottom: 0.3rem;"><a href="https://www.sciencedirect.com/science/article/pii/S0927537118301234?via%3Dihub"
+                                                                                                                        target="_blank"
+                                                                                                                        style="color: var(--accent-1); text-decoration: none;">https://www.sciencedirect.com/science/article/pii/S0927537118301234?via%3Dihub</a>
+                </li>
+                <li style="margin-bottom: 0.3rem;"><a href="https://nordregio.org/maps/income-and-inequality-typology-2017/"
+                                                                                                                        target="_blank"
+                                                                                                                        style="color: var(--accent-1); text-decoration: none;">https://nordregio.org/maps/income-and-inequality-typology-2017/</a>
+                </li>
+                <li style="margin-bottom: 0.3rem;"><a href="https://geolocet.com/blogs/news/income-distribution-across-danish-parishes"
+                                                                                                                        target="_blank"
+                                                                                                                        style="color: var(--accent-1); text-decoration: none;">https://geolocet.com/blogs/news/income-distribution-across-danish-parishes</a>
+                </li>
+                <li style="margin-bottom: 0.3rem;">Segel, E., & Heer, J. (2010). Narrative visualization: Telling
+                    stories with data. IEEE Transactions on Visualization and Computer Graphics, 16(6), 1139–1148.</li>
+            </ol>
+        </section>
 
     </main>
 
     <footer class="glass-footer">
-        Data sourced from INDKP107: Indkomster for personer over 14 år
+        Data sourced from INDKP107 — Statistics Denmark
     </footer>
 
-    <!-- Chart.js Dark Mode Mock Data -->
-    <script>
-        Chart.defaults.color = '#94a3b8'; 
-        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)'; 
-        Chart.defaults.font.family = "'Inter', sans-serif";
-
-        new Chart(document.getElementById('mainChart').getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: ['2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023'],
-                datasets: [
-                    { label: 'Men', data: [310, 320, 335, 350, 360, 355, 370, 385, 400], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4 },
-                    { label: 'Women', data: [260, 275, 285, 300, 310, 315, 330, 345, 360], borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.1)', fill: true, tension: 0.4 }
-                ]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-
-        new Chart(document.getElementById('barChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: ['Primary', 'Vocational', 'Short Higher', 'Medium Higher', 'Master\'s'],
-                datasets: [
-                    { label: 'Income Gap (DKK)', data: [3000, 5000, 4500, 6000, 9000], backgroundColor: '#8b5cf6', borderRadius: 4 }
-                ]
-            },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
-        });
-
-        new Chart(document.getElementById('lineChart').getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: ['Hovedstaden', 'Sjælland', 'Syddanmark', 'Midtjylland', 'Nordjylland'],
-                datasets: [
-                    { label: 'Average Income', data: [42000, 35000, 36500, 38000, 34000], borderColor: '#ec4899', tension: 0.4, pointBackgroundColor: '#ec4899' }
-                ]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-    </script>
 </body>
+
 </html>
