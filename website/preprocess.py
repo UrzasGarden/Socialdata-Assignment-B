@@ -25,9 +25,10 @@ OUT_DIR = BASE_DIR / "charts"
 OUT_DIR.mkdir(exist_ok=True)
 
 # Match the CSS accent palette so chart colors blend with the UI.
-ACCENT_BLUE = "#3b82f6"
+ACCENT_BLUE   = "#3b82f6"
 ACCENT_PURPLE = "#8b5cf6"
-ACCENT_PINK = "#ec4899"
+ACCENT_PINK   = "#ec4899"
+ACCENT_RED    = "#ef4444"
 TEXT_COLOR = "#e2e8f0"
 GRID_COLOR = "#ffffff"
 
@@ -140,7 +141,7 @@ def chart_time(df: pd.DataFrame) -> None:
 
     fig, ax = plt.subplots(figsize=(11, 4.8), dpi=140)
     cmap = plt.cm.colors.LinearSegmentedColormap.from_list(
-        "accents", [ACCENT_BLUE, ACCENT_PURPLE, ACCENT_PINK]
+        "accents", [ACCENT_BLUE, ACCENT_PURPLE, ACCENT_PINK, ACCENT_RED]
     )
     
     for i, col in enumerate(gap_pivot.columns):
@@ -196,7 +197,7 @@ def chart_education(df: pd.DataFrame) -> None:
     y = np.arange(len(labels))
     height = 0.35
 
-    ax.barh(y - height/2, pivot["Kvinder"], height, label="Women", color=ACCENT_PINK, edgecolor="none")
+    ax.barh(y - height/2, pivot["Kvinder"], height, label="Women", color=ACCENT_RED, edgecolor="none")
     ax.barh(y + height/2, pivot["Mænd"], height, label="Men", color=ACCENT_BLUE, edgecolor="none")
 
     ax.set_title(f"Income by Education (Men vs Women) — {latest}", pad=14, fontsize=12, color=TEXT_COLOR)
@@ -247,7 +248,7 @@ def chart_region(df: pd.DataFrame) -> None:
     ax.hlines(y, top_n["Kvinder"], top_n["Mænd"], color="#ffffff44", linewidth=2, zorder=1)
     
     # Draw dots
-    ax.scatter(top_n["Kvinder"], y, color=ACCENT_PINK, s=80, label="Women", zorder=2)
+    ax.scatter(top_n["Kvinder"], y, color=ACCENT_RED, s=80, label="Women", zorder=2)
     ax.scatter(top_n["Mænd"], y, color=ACCENT_BLUE, s=80, label="Men", zorder=2)
 
     ax.set_title(f"Regional Gender Gap (Long Higher Ed.) — {latest}", pad=14, fontsize=12, color=TEXT_COLOR)
