@@ -138,6 +138,23 @@
                         </div>
                     </div>
 
+                    <!-- Section 3: Education dot plot -->
+                    <div class="glass-card dot-plot-card">
+                        <div class="card-header dot-plot-header">
+                            <div>
+                                <h2 id="dot-plot-title">Gap (%) by Education Level</h2>
+                                <p class="subtitle" id="dot-plot-subtitle">Select areas on the map to compare across education levels</p>
+                            </div>
+                            <div class="viz-toggle dot-split-toggle" role="group" aria-label="Gender split">
+                                <button type="button" class="split-btn active" data-split="combined">Combined</button>
+                                <button type="button" class="split-btn" data-split="gender">By gender</button>
+                            </div>
+                        </div>
+                        <div class="dot-plot-wrapper">
+                            <canvas id="dot-plot-canvas"></canvas>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </section>
@@ -151,6 +168,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="script.js?v=3" defer></script>
+    <script src="script.js?v=5" defer></script>
 </body>
 </html>

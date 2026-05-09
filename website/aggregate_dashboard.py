@@ -39,6 +39,7 @@ OUT_PATH = BASE_DIR / "dashboard_aggregation.json"
 
 # Filter strings — must match the CSV exactly.
 UNIT_AVG_ALL = "Gennemsnit for alle personer (kr.)"
+UNIT_COUNT   = "Personer med indkomsttypen (antal)"
 COUNTRY = "Hele landet"
 
 # Income types to surface in the dashboard. Keys are the JS-friendly labels
@@ -111,7 +112,7 @@ def load_filtered() -> pd.DataFrame:
 
         chunk["INDHOLD"] = pd.to_numeric(chunk["INDHOLD"], errors="coerce")
         mask = (
-            (chunk["ENHED"] == UNIT_AVG_ALL)
+            (chunk["ENHED"].isin([UNIT_AVG_ALL, UNIT_COUNT]))
             & (chunk["INDKOMSTTYPE"].isin(INCOME_TYPES.values()))
             & (chunk["KOEN"].isin(["Mænd", "Kvinder"]))   # gap needs M & F only
         )
@@ -134,8 +135,13 @@ def adjust_inflation(df: pd.DataFrame) -> pd.DataFrame:
     if missing:
         print(f"      WARNING: no CPI multiplier for years {missing}; using 1.0")
 
+    # Only apply CPI to average-kroner rows. Count rows are headcounts and
+    # must pass through unchanged.
     df["CPI_MULT"] = df["TID"].map(CPI_2024_MULTIPLIER).fillna(1.0).astype(float)
-    df["Adjusted_Income"] = (df["INDHOLD"] * df["CPI_MULT"]).round().astype("int64")
+    is_avg = df["ENHED"] == UNIT_AVG_ALL
+    df["Adjusted_Value"] = df["INDHOLD"].astype(float)
+    df.loc[is_avg, "Adjusted_Value"] = df.loc[is_avg, "INDHOLD"] * df.loc[is_avg, "CPI_MULT"]
+    df["Adjusted_Value"] = df["Adjusted_Value"].round().astype("int64")
     return df
 
 
@@ -143,33 +149,51 @@ def adjust_inflation(df: pd.DataFrame) -> pd.DataFrame:
 # Step 3 — Pivot Men/Women side-by-side, compute Gap
 # ---------------------------------------------------------------------------
 def pivot_gender(df: pd.DataFrame) -> pd.DataFrame:
-    print("[3/5] Pivoting M/F and computing income gap ...")
+    print("[3/5] Pivoting M/F and computing income gap + headcount ...")
 
     # Map raw UDDNIV -> clean English label, drop "Uoplyst" and unknowns.
     df["Education"] = df["UDDNIV"].map(EDUCATION_LABELS)
-    
+
     inv_income = {v: k for k, v in INCOME_TYPES.items()}
     df["IncomeTypeLabel"] = df["INDKOMSTTYPE"].map(inv_income)
-    
+
     df = df.dropna(subset=["Education", "IncomeTypeLabel"])
 
+    # Tag each row with a "metric" combining unit + gender so we can pivot
+    # avg-income and headcount columns side-by-side in one shot.
+    metric_map = {
+        (UNIT_AVG_ALL, "Mænd"):    "Avg_M",
+        (UNIT_AVG_ALL, "Kvinder"): "Avg_F",
+        (UNIT_COUNT,   "Mænd"):    "Cnt_M",
+        (UNIT_COUNT,   "Kvinder"): "Cnt_F",
+    }
+    df["Metric"] = list(zip(df["ENHED"], df["KOEN"]))
+    df["Metric"] = df["Metric"].map(metric_map)
+    df = df.dropna(subset=["Metric"])
+
     grouped = (
-        df.groupby(["TID", "OMRÅDE", "Education", "IncomeTypeLabel", "KOEN"], observed=True)["Adjusted_Income"]
+        df.groupby(["TID", "OMRÅDE", "Education", "IncomeTypeLabel", "Metric"], observed=True)["Adjusted_Value"]
         .mean()
         .round()
         .astype("int64")
-        .unstack("KOEN")
+        .unstack("Metric")
         .reset_index()
     )
 
-    # After unstack, columns include "Mænd" and "Kvinder". Some (year, area,
-    # education, income) cells may be missing one gender — drop those rows so the
-    # gap is always meaningful.
-    grouped = grouped.dropna(subset=["Mænd", "Kvinder"])
-    grouped = grouped.rename(columns={"Mænd": "Men", "Kvinder": "Women"})
+    # Need both genders' average income for a meaningful gap. Headcount is
+    # optional — fill missing with 0.
+    grouped = grouped.dropna(subset=["Avg_M", "Avg_F"])
+    grouped = grouped.rename(columns={"Avg_M": "Men", "Avg_F": "Women"})
     grouped["Men"] = grouped["Men"].astype("int64")
     grouped["Women"] = grouped["Women"].astype("int64")
     grouped["Gap"] = grouped["Men"] - grouped["Women"]
+
+    cnt_m = grouped["Cnt_M"].fillna(0) if "Cnt_M" in grouped.columns else 0
+    cnt_f = grouped["Cnt_F"].fillna(0) if "Cnt_F" in grouped.columns else 0
+    grouped["Men_Count"]   = (cnt_m if hasattr(cnt_m, "astype") else pd.Series([cnt_m] * len(grouped))).astype("int64")
+    grouped["Women_Count"] = (cnt_f if hasattr(cnt_f, "astype") else pd.Series([cnt_f] * len(grouped))).astype("int64")
+    grouped["Count"] = grouped["Men_Count"] + grouped["Women_Count"]
+
     print(f"      pivoted rows: {len(grouped):,}")
     return grouped
 
@@ -215,6 +239,7 @@ def build_nested(grouped: pd.DataFrame) -> tuple[dict, list, list, list]:
             "Men": int(row["Men"]),
             "Women": int(row["Women"]),
             "Gap": int(row["Gap"]),
+            "Count": int(row["Count"]),
         }
 
     for kind, target_key in (
@@ -231,6 +256,9 @@ def build_nested(grouped: pd.DataFrame) -> tuple[dict, list, list, list]:
                 "Men": int(row["Men"]),
                 "Women": int(row["Women"]),
                 "Gap": int(row["Gap"]),
+                "Count": int(row["Count"]),
+                "Men_Count": int(row["Men_Count"]),
+                "Women_Count": int(row["Women_Count"]),
             }
 
     landsdele = sorted(grouped.loc[grouped["AreaKind"] == "landsdel", "AreaName"].unique())

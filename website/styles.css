@@ -716,3 +716,104 @@ body {
     font-variant-numeric: tabular-nums;
     color: #fff;
 }
+
+/* --- Education dot plot --- */
+.dot-plot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.dot-split-toggle {
+    flex: 0 0 auto;
+    min-width: 220px;
+}
+
+.split-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.5rem 0.7rem;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.split-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.split-btn.active {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(139, 92, 246, 0.25));
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.dot-plot-wrapper {
+    position: relative;
+    height: 420px;
+    width: 100%;
+}
+
+.dot-plot-wrapper canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.range-tooltip {
+    position: absolute;
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+    background: rgba(15, 17, 25, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    white-space: nowrap;
+    z-index: 5;
+}
+
+.range-tooltip .r-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.2rem;
+    line-height: 1.45;
+}
+
+.range-tooltip .r-row:first-child {
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 0.25rem;
+}
+
+.range-tooltip .r-row .v {
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+}
+
+.range-tooltip .r-diff {
+    margin-top: 0.2rem;
+    padding-top: 0.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    color: #c4b5fd;
+}
+
+.range-tooltip .r-diff .v {
+    color: #ddd6fe;
+    font-weight: 600;
+}

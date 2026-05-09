@@ -31,7 +31,7 @@
   const TEXT_SECONDARY = "#94a3b8";
 
   const ASSETS = {
-    aggregation: "dashboard_aggregation.json?v=2",
+    aggregation: "dashboard_aggregation.json?v=4",
     landsdel:    "GeoData/landsdel.geojson",
     regions:     "GeoData/regions.json",
     munis:       "GeoData/municipalities_clean.geojson",
@@ -78,6 +78,8 @@
     map: null,
     geoLayer: null,          // currently rendered Leaflet GeoJSON layer
     chart: null,             // Chart.js instance (null when in table mode)
+    dotChart: null,          // Chart.js instance for education dot plot
+    dotSplit: "combined",    // "combined" | "gender"
   };
 
   // -----------------------------------------------------------------------
@@ -424,9 +426,11 @@
       return;
     }
 
-    if (state.chartType === "bar")   return renderBar(canvas, points);
-    if (state.chartType === "line")  return renderLine(canvas, layerKey, points);
-    if (state.chartType === "table") return renderTable(tableHost, canvas, points);
+    if (state.chartType === "bar")   renderBar(canvas, points);
+    else if (state.chartType === "line")  renderLine(canvas, layerKey, points);
+    else if (state.chartType === "table") renderTable(tableHost, canvas, points);
+
+    renderDotPlot();
   }
 
   function chartBaseOptions() {
@@ -596,6 +600,303 @@
     document.getElementById("chart-subtitle").textContent = subtitleText;
   }
 
+  /** Normalized education-share dot plot.
+   *  For each selected area, shows what % of people (within the current
+   *  income type) have each education level. Values are normalized per
+   *  area so different-sized regions/municipalities are directly comparable. */
+  function renderDotPlot() {
+    const canvas  = document.getElementById("dot-plot-canvas");
+    const titleEl = document.getElementById("dot-plot-title");
+    const subEl   = document.getElementById("dot-plot-subtitle");
+
+    if (state.dotChart) { state.dotChart.destroy(); state.dotChart = null; }
+
+    const eduLevels = state.meta.Education_Levels;
+    const layerKey  = state.layer;
+    const dataDict  = layerKey === "country"
+      ? state.landsdelData
+      : layerKey === "regions"
+        ? state.regionData
+        : state.muniData;
+    const yearMap = dataDict[state.year] ?? {};
+
+    // Prefer selected areas; otherwise fall back to top 6 by gap at the
+    // currently-selected education level so the chart is never empty.
+    let areas;
+    if (state.selected.size) {
+      areas = [...state.selected].filter(n => yearMap[n]);
+    } else {
+      const allNames = Object.keys(yearMap).filter(n => yearMap[n]?.[state.education]);
+      allNames.sort((a, b) => yearMap[b][state.education].Gap - yearMap[a][state.education].Gap);
+      areas = allNames.slice(0, 6);
+    }
+
+    if (!areas.length) return;
+
+    const palette = [
+      "#3b82f6", "#ec4899", "#34d399", "#fbbf24", "#f87171",
+      "#a78bfa", "#fb923c", "#22d3ee", "#4ade80", "#f472b6",
+    ];
+
+    // For each area: pull the count(s) per education level, divide by the
+    // area's total → percentage share. Keeps the X-axis comparable across
+    // areas of different sizes.
+    const splitMode = state.dotSplit === "gender";
+    const datasets = [];
+    areas.forEach((name, i) => {
+      const color = palette[i % palette.length];
+      if (!splitMode) {
+        const counts = eduLevels.map(edu => yearMap[name]?.[edu]?.Count ?? 0);
+        const total  = counts.reduce((a, b) => a + b, 0);
+        const data   = counts
+          .map((c, j) => (total > 0 ? { x: (c / total) * 100, y: j, count: c } : null))
+          .filter(Boolean);
+        datasets.push({
+          label: name,
+          data,
+          backgroundColor: color,
+          borderColor: color,
+          pointStyle: "circle",
+          pointRadius: 7,
+          pointHoverRadius: 10,
+          showLine: false,
+          $area: name,
+          $gender: null,
+        });
+      } else {
+        // Per-gender shares: each gender normalised to its own total so
+        // the M and F distributions are independently comparable.
+        // Y is offset above/below the row centerline so the two genders
+        // stack visibly and the connector lines stay aligned with the dots.
+        const mCounts = eduLevels.map(edu => yearMap[name]?.[edu]?.Men_Count   ?? 0);
+        const fCounts = eduLevels.map(edu => yearMap[name]?.[edu]?.Women_Count ?? 0);
+        const mTotal  = mCounts.reduce((a, b) => a + b, 0);
+        const fTotal  = fCounts.reduce((a, b) => a + b, 0);
+        const Y_OFFSET = 0.14;
+
+        datasets.push({
+          label: `${name} · Men`,
+          data: mCounts
+            .map((c, j) => (mTotal > 0 ? { x: (c / mTotal) * 100, y: j - Y_OFFSET, count: c } : null))
+            .filter(Boolean),
+          backgroundColor: color,
+          borderColor: color,
+          pointStyle: "circle",
+          pointRadius: 7,
+          pointHoverRadius: 10,
+          showLine: false,
+          $area: name,
+          $gender: "M",
+        });
+        datasets.push({
+          label: `${name} · Women`,
+          data: fCounts
+            .map((c, j) => (fTotal > 0 ? { x: (c / fTotal) * 100, y: j + Y_OFFSET, count: c } : null))
+            .filter(Boolean),
+          backgroundColor: color,
+          borderColor: color,
+          pointStyle: "triangle",
+          pointRadius: 8,
+          pointHoverRadius: 11,
+          showLine: false,
+          $area: name,
+          $gender: "F",
+        });
+      }
+    });
+
+    const layerLabel = { country: "Subregions", regions: "Regions", munis: "Municipalities" }[layerKey];
+    const incomeLabel = state.incomeType || "Wages";
+    titleEl.textContent = `Education Distribution — ${layerLabel}, ${state.year}`;
+    subEl.textContent   = state.selected.size
+      ? `Share of ${incomeLabel.toLowerCase()} earners by education in ${state.selected.size} selected area${state.selected.size > 1 ? "s" : ""} (normalized per area)`
+      : `Share of ${incomeLabel.toLowerCase()} earners by education · top 6 ${layerLabel.toLowerCase()} (normalized per area)`;
+
+    // Draws subtle row bands so each education level reads as its own
+    // horizontal lane (label sits inside the band, not on a gridline).
+    const rowBandsPlugin = {
+      id: "rowBands",
+      beforeDatasetsDraw(chart) {
+        const { ctx, scales, chartArea } = chart;
+        const yScale = scales.y;
+        if (!yScale || !chartArea) return;
+        ctx.save();
+
+        // Faint zebra fill on every other row.
+        for (let j = 0; j < eduLevels.length; j++) {
+          if (j % 2 !== 0) continue;
+          const yTop = yScale.getPixelForValue(j + 0.5);
+          const yBot = yScale.getPixelForValue(j - 0.5);
+          ctx.fillStyle = "rgba(255,255,255,0.025)";
+          ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBot - yTop);
+        }
+
+        // Crisp separators between rows.
+        ctx.strokeStyle = "rgba(255,255,255,0.06)";
+        ctx.lineWidth = 1;
+        for (let j = 0; j < eduLevels.length - 1; j++) {
+          const py = yScale.getPixelForValue(j + 0.5);
+          ctx.beginPath();
+          ctx.moveTo(chartArea.left, py);
+          ctx.lineTo(chartArea.right, py);
+          ctx.stroke();
+        }
+        ctx.restore();
+      },
+    };
+
+    // Draws a thin connector from min-X to max-X dot on each education row.
+    // Sits underneath the dots so they stay readable. afterEvent hit-tests
+    // the connector for hover and shows a small spread tooltip.
+    const HIT_TOLERANCE = 8;
+    const rangeLinesPlugin = {
+      id: "rangeLines",
+      beforeDatasetsDraw(chart) {
+        const { ctx, scales } = chart;
+        const xScale = scales.x, yScale = scales.y;
+        if (!xScale || !yScale) return;
+
+        chart.$rangeLines = [];
+        ctx.save();
+        ctx.lineWidth = 2;
+
+        // Bucket points by row + gender (gender null in combined mode).
+        const buckets = new Map(); // key: `${j}|${gender}` -> { j, gender, xs: [] }
+        chart.data.datasets.forEach((ds, i) => {
+          const meta = chart.getDatasetMeta(i);
+          if (meta.hidden) return;
+          ds.data.forEach(pt => {
+            if (!pt) return;
+            const j = Math.round(pt.y);
+            const key = `${j}|${ds.$gender ?? ""}`;
+            if (!buckets.has(key)) buckets.set(key, { j, gender: ds.$gender ?? null, xs: [] });
+            buckets.get(key).xs.push(pt.x);
+          });
+        });
+
+        const yOffsetFor = g => g === "M" ? -0.14 : g === "F" ? 0.14 : 0;
+
+        for (const { j, gender, xs } of buckets.values()) {
+          if (xs.length < 2) continue;
+          const xMin = Math.min(...xs);
+          const xMax = Math.max(...xs);
+          const py    = yScale.getPixelForValue(j + yOffsetFor(gender));
+          const pxMin = xScale.getPixelForValue(xMin);
+          const pxMax = xScale.getPixelForValue(xMax);
+
+          ctx.strokeStyle = gender ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.28)";
+          ctx.beginPath();
+          ctx.moveTo(pxMin, py);
+          ctx.lineTo(pxMax, py);
+          ctx.stroke();
+
+          chart.$rangeLines.push({ j, gender, xMin, xMax, py, pxMin, pxMax });
+        }
+        ctx.restore();
+      },
+      afterEvent(chart, args) {
+        const e = args.event;
+        if (e.type !== "mousemove" && e.type !== "mouseout") return;
+
+        const tip = ensureRangeTooltip();
+        if (e.type === "mouseout" || !chart.$rangeLines) {
+          tip.style.opacity = "0";
+          return;
+        }
+
+        // If the cursor is on an actual dot, defer to Chart.js's own tooltip.
+        const onDot = chart.getElementsAtEventForMode(e, "nearest", { intersect: true }, true);
+        if (onDot.length) { tip.style.opacity = "0"; return; }
+
+        let hit = null;
+        for (const ln of chart.$rangeLines) {
+          if (Math.abs(e.y - ln.py) <= HIT_TOLERANCE &&
+              e.x >= ln.pxMin - HIT_TOLERANCE && e.x <= ln.pxMax + HIT_TOLERANCE) {
+            hit = ln;
+            break;
+          }
+        }
+
+        if (!hit) { tip.style.opacity = "0"; return; }
+
+        const diff = hit.xMax - hit.xMin;
+        const genderLabel = hit.gender === "M" ? " · Men"
+                          : hit.gender === "F" ? " · Women"
+                          : "";
+        tip.innerHTML =
+          `<div class="r-row"><span>${eduLevels[hit.j]}${genderLabel}</span></div>` +
+          `<div class="r-row"><span>Highest</span><span class="v">${hit.xMax.toFixed(1)}%</span></div>` +
+          `<div class="r-row"><span>Lowest</span><span class="v">${hit.xMin.toFixed(1)}%</span></div>` +
+          `<div class="r-row r-diff"><span>Difference</span><span class="v">${diff.toFixed(1)} pp</span></div>`;
+        tip.style.left = `${(hit.pxMin + hit.pxMax) / 2}px`;
+        tip.style.top  = `${hit.py - 12}px`;
+        tip.style.opacity = "1";
+      },
+    };
+
+    function ensureRangeTooltip() {
+      let tip = document.getElementById("range-line-tooltip");
+      if (!tip) {
+        tip = document.createElement("div");
+        tip.id = "range-line-tooltip";
+        tip.className = "range-tooltip";
+        document.querySelector(".dot-plot-wrapper")?.appendChild(tip);
+      }
+      return tip;
+    }
+
+    state.dotChart = new Chart(canvas.getContext("2d"), {
+      type: "scatter",
+      data: { datasets },
+      plugins: [rowBandsPlugin, rangeLinesPlugin],
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: TEXT_PRIMARY, usePointStyle: true } },
+          tooltip: {
+            backgroundColor: "rgba(15, 17, 25, 0.95)",
+            titleColor: "#fff",
+            bodyColor: TEXT_PRIMARY,
+            borderColor: "rgba(255,255,255,0.08)",
+            borderWidth: 1,
+            usePointStyle: true,
+            callbacks: {
+              title: ctx => ctx[0].dataset.label,
+              label: ctx => {
+                const edu = eduLevels[Math.round(ctx.parsed.y)] ?? "";
+                const cnt = ctx.raw?.count;
+                const cntStr = cnt != null ? ` (${cnt.toLocaleString()})` : "";
+                return `${edu}: ${ctx.parsed.x.toFixed(1)}%${cntStr}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            title: { display: true, text: `Share of ${incomeLabel.toLowerCase()} earners (%)`, color: TEXT_SECONDARY, font: { size: 11 } },
+            ticks: { color: TEXT_SECONDARY, callback: v => v.toFixed(0) + "%" },
+            grid:  { color: "rgba(255,255,255,0.05)" },
+            min: 0,
+          },
+          y: {
+            type: "linear",
+            min: -0.5,
+            max: eduLevels.length - 0.5,
+            ticks: {
+              color: TEXT_SECONDARY,
+              stepSize: 1,
+              callback: val => eduLevels[Math.round(val)] ?? "",
+            },
+            // Default gridlines pass through the labels and dots; we draw
+            // our own lines between rows via the rowBands plugin instead.
+            grid: { drawOnChartArea: false, color: "rgba(255,255,255,0.05)" },
+          },
+        },
+      },
+    });
+  }
+
   function renderTable(tableHost, canvas, points) {
     canvas.classList.add("hidden");
     tableHost.classList.remove("hidden");
@@ -719,6 +1020,15 @@
       renderLayer();
       renderChart();
       renderSelectionChips();
+    });
+
+    document.querySelectorAll(".split-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".split-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.dotSplit = btn.dataset.split;
+        renderDotPlot();
+      });
     });
 
     document.getElementById("update-btn").addEventListener("click", () => {
