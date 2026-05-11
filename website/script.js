@@ -116,7 +116,9 @@
       opt.textContent = inc;
       incomeSel.appendChild(opt);
     });
-    const defaultIncome = state.meta.Income_Types.includes("Wages/salary") ? "Wages/salary" : state.meta.Income_Types[0];
+    const defaultIncome = state.meta.Income_Types.includes("Wages")
+      ? "Wages"
+      : (state.meta.Income_Types.includes("Wages/salary") ? "Wages/salary" : state.meta.Income_Types[0]);
     incomeSel.value = defaultIncome;
     state.incomeType = defaultIncome;
 
@@ -133,9 +135,9 @@
       eduSel.appendChild(opt);
     });
     // Default to the highest tier — that's where the gap is most dramatic.
-    const defaultEdu = state.meta.Education_Levels.includes("Long tertiary")
-      ? "Long tertiary"
-      : state.meta.Education_Levels[0];
+    const defaultEdu = state.meta.Education_Levels.includes("Long Higher Education")
+      ? "Long Higher Education"
+      : (state.meta.Education_Levels.includes("Long tertiary") ? "Long tertiary" : state.meta.Education_Levels[0]);
     eduSel.value = defaultEdu;
     state.education = defaultEdu;
 
@@ -405,15 +407,16 @@
       munis: "Municipalities",
     }[layerKey] || "Areas";
 
+    const incLabel = state.incomeType || 'Wages/salary';
     let titlePrefix = "Income Gap";
-    let subtitleText = `${state.incomeType || 'Wages/salary'} gap, ${state.year} DKK (CPI-adjusted to 2024)`;
+    let subtitleText = `How much more men earn relative to women in ${state.year} ·  [(Men − Women) / Women × 100] DKK (CPI-adjusted to 2024)`;
 
     if (state.metric === "compare") {
       titlePrefix = "Men vs Women Income";
-      subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'Wages/salary'} income, ${state.year} DKK (CPI-adjusted to 2024)`;
+      subtitleText = `Average ${incLabel.toLowerCase()} side-by-side, ${state.year} DKK (CPI-adjusted to 2024)`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Income Gap (%)";
-      subtitleText = `${state.incomeType || 'Wages/salary'} gap as % of women's income, ${state.year}`;
+      subtitleText = `How much more men earn relative to women in ${state.year} · [(Men − Women) / Women × 100]`;
     }
 
     titleEl.textContent =
@@ -887,6 +890,9 @@
               color: TEXT_SECONDARY,
               stepSize: 1,
               callback: val => eduLevels[Math.round(val)] ?? "",
+            },
+            afterBuildTicks: axis => {
+              axis.ticks = eduLevels.map((_, j) => ({ value: j }));
             },
             // Default gridlines pass through the labels and dots; we draw
             // our own lines between rows via the rowBands plugin instead.
