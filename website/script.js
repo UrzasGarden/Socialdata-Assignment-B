@@ -1,5 +1,5 @@
 /* ==========================================================================
- * Interactive Dashboard — "Bowl" of the Martini Glass
+ * Interactive Dashboard - "Bowl" of the Martini Glass
  * --------------------------------------------------------------------------
  * Loads the pre-aggregated dashboard JSON + three GeoJSON files, renders an
  * interactive Leaflet choropleth, and drives a Chart.js panel that responds
@@ -134,7 +134,7 @@
       opt.textContent = lv;
       eduSel.appendChild(opt);
     });
-    // Default to the highest tier — that's where the gap is most dramatic.
+    // Default to the highest tier - that's where the gap is most dramatic.
     const defaultEdu = state.meta.Education_Levels.includes("Long Higher Education")
       ? "Long Higher Education"
       : (state.meta.Education_Levels.includes("Long tertiary") ? "Long tertiary" : state.meta.Education_Levels[0]);
@@ -156,7 +156,7 @@
   // 3. Map
   // -----------------------------------------------------------------------
   function initMap() {
-    // No tile layer — we want the page's animated blob background to bleed
+    // No tile layer - we want the page's animated blob background to bleed
     // through. The map is purely a vector choropleth on transparent canvas.
     state.map = L.map("map", {
       zoomControl: true,
@@ -188,19 +188,25 @@
   function mapMetricValue(dp) {
     if (!dp) return null;
     if (state.metric === "gap_pct") {
-      return dp.Women ? (dp.Gap / dp.Women) * 100 : null;
+      {
+        const hi = Math.max(dp.Men, dp.Women);
+        const lo = Math.min(dp.Men, dp.Women);
+        return hi ? (1 - lo / hi) * 100 : null;
+      }
     }
     return dp.Gap;
   }
 
-  /** Linear hex interpolation along blue -> red. */
+  /** Linear hex interpolation along green -> yellow -> orange -> red. */
   function colorForGap(gap, min, max) {
     if (gap == null || !isFinite(gap)) return "rgba(255,255,255,0.05)";
     if (max <= min) return ACCENT_PURPLE;
     const t = Math.max(0, Math.min(1, (gap - min) / (max - min)));
     const stops = [
-      { t: 0.0, c: hexToRgb(ACCENT_BLUE) },
-      { t: 1.0, c: hexToRgb(ACCENT_RED) },
+      { t: 0.0,  c: hexToRgb("#a8e063") }, // light green
+      { t: 0.4,  c: hexToRgb("#fde047") }, // yellow
+      { t: 0.7,  c: hexToRgb("#f97316") }, // orange
+      { t: 1.0,  c: hexToRgb("#ef4444") }, // red
     ];
     let a = stops[0], b = stops[stops.length - 1];
     for (let i = 0; i < stops.length - 1; i++) {
@@ -218,16 +224,21 @@
     return [parseInt(v.slice(0,2), 16), parseInt(v.slice(2,4), 16), parseInt(v.slice(4,6), 16)];
   }
 
-  /** Compute min/max gap to anchor the colour scale and legend. */
-  function gapDomain(layerKey) {
-    const fc = state.geo[layerKey];
-    if (!fc) return [0, 0];
+  /** Compute min/max gap to anchor the colour scale and legend.
+   *  Domain is computed across ALL layers (country/regions/munis) for the
+   *  current income / education / year / metric so colors stay consistent
+   *  when the user toggles between geographic levels. */
+  function gapDomain(_layerKey) {
     const gaps = [];
-    fc.features.forEach(f => {
-      const r = lookupFeature(f, layerKey);
-      const v = mapMetricValue(r?.dp);
-      if (v != null && isFinite(v)) gaps.push(v);
-    });
+    for (const key of ["country", "regions", "munis"]) {
+      const fc = state.geo[key];
+      if (!fc) continue;
+      fc.features.forEach(f => {
+        const r = lookupFeature(f, key);
+        const v = mapMetricValue(r?.dp);
+        if (v != null && isFinite(v)) gaps.push(v);
+      });
+    }
     if (!gaps.length) return [0, 0];
     return [Math.min(...gaps), Math.max(...gaps)];
   }
@@ -245,8 +256,8 @@
     const [gMin, gMax] = gapDomain(layerKey);
 
     // Update legend ticks.
-    document.getElementById("legend-min").textContent = gMax > gMin ? formatMetric(gMin) : "—";
-    document.getElementById("legend-max").textContent = gMax > gMin ? formatMetric(gMax) : "—";
+    document.getElementById("legend-min").textContent = gMax > gMin ? formatMetric(gMin) : "-";
+    document.getElementById("legend-max").textContent = gMax > gMin ? formatMetric(gMax) : "-";
     document.getElementById("map-legend").style.opacity = gMax > gMin ? "1" : "0.3";
 
     const legendLabel = document.querySelector("#map-legend .legend-label");
@@ -254,12 +265,12 @@
       const incomeLabel = state.incomeType || "Wages/salary";
       const yearLabel = state.year || "2024";
       legendLabel.textContent = state.metric === "gap_pct"
-        ? `${incomeLabel} gap (% of women's income, ${yearLabel})`
+        ? `${incomeLabel} gap (% of the higher earner's income, ${yearLabel})`
         : `${incomeLabel} gap (M − W, ${yearLabel} DKK)`;
     }
 
     // municipalities_clean.geojson already has exactly 99 dissolved features
-    // (98 current municipalities + Christiansø). No filter needed — features
+    // (98 current municipalities + Christiansø). No filter needed - features
     // without data for the current filter show greyed out via the style fn.
     const filter = () => true;
 
@@ -338,14 +349,14 @@
   }
 
   function formatKr(v) {
-    if (v == null || !isFinite(v)) return "—";
+    if (v == null || !isFinite(v)) return "-";
     if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(2) + "M kr.";
     if (Math.abs(v) >= 1_000)     return (v / 1_000).toFixed(0) + "k kr.";
     return Math.round(v) + " kr.";
   }
 
   function formatPct(v) {
-    if (v == null || !isFinite(v)) return "—";
+    if (v == null || !isFinite(v)) return "-";
     return v.toFixed(1) + "%";
   }
 
@@ -377,7 +388,7 @@
     }
 
     // Sort by gap descending and cap at 12 for legibility (only when
-    // selection is empty — selections always show all selected items).
+    // selection is empty - selections always show all selected items).
     if (!state.selected.size && layerKey === "munis") {
       names.sort((a, b) => yearMap[b][state.education].Gap - yearMap[a][state.education].Gap);
       names = names.slice(0, 12);
@@ -409,23 +420,23 @@
 
     const incLabel = state.incomeType || 'Wages/salary';
     let titlePrefix = "Income Gap";
-    let subtitleText = `How much more men earn relative to women in ${state.year} ·  [(Men − Women) / Women × 100] DKK (CPI-adjusted to 2024)`;
+    let subtitleText = `How much more men earn than women in ${state.year} · [Men − Women] DKK (CPI-adjusted to 2024)`;
 
     if (state.metric === "compare") {
       titlePrefix = "Men vs Women Income";
       subtitleText = `Average ${incLabel.toLowerCase()} side-by-side, ${state.year} DKK (CPI-adjusted to 2024)`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Income Gap (%)";
-      subtitleText = `How much more men earn relative to women in ${state.year} · [(Men − Women) / Women × 100]`;
+      subtitleText = `Pay gap as % of the higher earner's income in ${state.year} · [(1 − lower / higher) × 100]`;
     }
 
     titleEl.textContent =
-      `${titlePrefix}: ${state.education} — ${layerLabel}` +
+      `${titlePrefix}: ${state.education} - ${layerLabel}` +
       (state.selected.size ? ` (${state.selected.size} selected)` : "");
     subtitleEl.textContent = subtitleText;
 
     if (!points.length) {
-      titleEl.textContent += " — no data";
+      titleEl.textContent += " - no data";
       return;
     }
 
@@ -493,7 +504,11 @@
     } else if (state.metric === "gap_pct") {
       datasets = [{
         label: "Gap (%)",
-        data: points.map(p => p.Women ? ((p.Gap / p.Women) * 100) : null),
+        data: points.map(p => {
+          const hi = Math.max(p.Men, p.Women);
+          const lo = Math.min(p.Men, p.Women);
+          return hi ? (1 - lo / hi) * 100 : null;
+        }),
         backgroundColor: ACCENT_PURPLE,
         borderRadius: 6,
       }];
@@ -569,7 +584,11 @@
           data: years.map(y => {
             const dp = dataDict[String(y)]?.[name]?.[state.education];
             if (!dp) return null;
-            if (state.metric === "gap_pct") return dp.Women ? ((dp.Gap / dp.Women) * 100) : null;
+            if (state.metric === "gap_pct") {
+              const hi = Math.max(dp.Men, dp.Women);
+              const lo = Math.min(dp.Men, dp.Women);
+              return hi ? (1 - lo / hi) * 100 : null;
+            }
             return dp.Gap;
           }),
           borderColor: palette[i % palette.length],
@@ -595,7 +614,7 @@
       subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'Wages/salary'}, 2024 DKK · ${areas.length} areas`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Gap Trend (%)";
-      subtitleText = `${state.incomeType || 'Wages/salary'} gap as % of women's income · ${areas.length} areas`;
+      subtitleText = `${state.incomeType || 'Wages/salary'} gap as % of the higher earner's income · (1 − lower / higher) × 100 · ${areas.length} areas`;
     }
 
     document.getElementById("chart-title").textContent =
@@ -710,10 +729,10 @@
 
     const layerLabel = { country: "Subregions", regions: "Regions", munis: "Municipalities" }[layerKey];
     const incomeLabel = state.incomeType || "Wages";
-    titleEl.textContent = `Education Distribution — ${layerLabel}, ${state.year}`;
+    titleEl.textContent = `Education Distribution - ${layerLabel}, ${state.year}`;
     subEl.textContent   = state.selected.size
-      ? `Share of ${incomeLabel.toLowerCase()} earners by education in ${state.selected.size} selected area${state.selected.size > 1 ? "s" : ""} (normalized per area)`
-      : `Share of ${incomeLabel.toLowerCase()} earners by education · top 6 ${layerLabel.toLowerCase()} (normalized per area)`;
+      ? `Share of people by education in ${state.selected.size} selected area${state.selected.size > 1 ? "s" : ""} (normalized per area)`
+      : `Share of people by education · top 6 ${layerLabel.toLowerCase()} (normalized per area)`;
 
     // Draws subtle row bands so each education level reads as its own
     // horizontal lane (label sits inside the band, not on a gridline).
@@ -877,7 +896,7 @@
         },
         scales: {
           x: {
-            title: { display: true, text: `Share of ${incomeLabel.toLowerCase()} earners (%)`, color: TEXT_SECONDARY, font: { size: 11 } },
+            title: { display: true, text: `Share of people (%)`, color: TEXT_SECONDARY, font: { size: 11 } },
             ticks: { color: TEXT_SECONDARY, callback: v => v.toFixed(0) + "%" },
             grid:  { color: "rgba(255,255,255,0.05)" },
             min: 0,
@@ -932,7 +951,7 @@
   function renderSelectionChips() {
     const list = document.getElementById("selection-list");
     if (!state.selected.size) {
-      list.innerHTML = `<span class="empty">None — showing all visible areas</span>`;
+      list.innerHTML = `<span class="empty">None - showing all visible areas</span>`;
       return;
     }
     list.innerHTML = [...state.selected].map(name => `
@@ -1058,7 +1077,7 @@
     } catch (err) {
       console.error("Dashboard failed to initialize:", err);
       document.getElementById("map").innerHTML =
-        `<div style="padding:2rem;color:#f87171">Failed to load data — see console.<br>` +
+        `<div style="padding:2rem;color:#f87171">Failed to load data - see console.<br>` +
         `If you're opening index.html with file://, you need to serve it via a local web server ` +
         `(fetch() can't read local files).</div>`;
     }

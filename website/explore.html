@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Denmark's Equality Paradox — Interactive Explorer</title>
+    <title>Denmark's Equality Paradox - Interactive Explorer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
 
@@ -22,7 +22,7 @@
     <header class="glass-header">
         <div class="header-content">
             <h1>Interactive Explorer</h1>
-            <p>Filter, click, and compare — explore the data behind the story.</p>
+            <p>Filter, click, and compare - explore the data behind the story.</p>
         </div>
         <nav class="header-nav">
             <a href="../index.html">Data Story</a>
@@ -70,12 +70,12 @@
                         <label>Visualization Type</label>
                         <div class="viz-toggle" role="group" aria-label="Visualization type">
                             <button type="button" class="viz-btn active" data-viz="bar"
-                                    title="Grouped bar — income comparison" aria-label="Grouped bar">
+                                    title="Grouped bar - income comparison" aria-label="Grouped bar">
                                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20V14M22 20H2" stroke-linecap="round"/></svg>
                                 <span>Bar</span>
                             </button>
                             <button type="button" class="viz-btn" data-viz="line"
-                                    title="Line chart — trend over time" aria-label="Line chart">
+                                    title="Line chart - trend over time" aria-label="Line chart">
                                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 17 9 11 13 15 21 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 <span>Line</span>
                             </button>
@@ -90,7 +90,7 @@
                     <div class="control-group selection-summary">
                         <label>Selected Areas</label>
                         <div id="selection-list" class="selection-list">
-                            <span class="empty">None — showing all visible areas</span>
+                            <span class="empty">None - showing all visible areas</span>
                         </div>
                         <button type="button" id="clear-selection" class="link-btn">Clear selection</button>
                     </div>
@@ -120,8 +120,8 @@
                             <span class="legend-label">Income gap (M − W, 2024 DKK)</span>
                             <div class="legend-bar"></div>
                             <div class="legend-ticks">
-                                <span id="legend-min">—</span>
-                                <span id="legend-max">—</span>
+                                <span id="legend-min">-</span>
+                                <span id="legend-max">-</span>
                             </div>
                         </div>
                     </div>
@@ -162,12 +162,12 @@
     </main>
 
     <footer class="glass-footer">
-        Data sourced from INDKP107 — Statistics Denmark
+        Data sourced from INDKP107 - Statistics Denmark
     </footer>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="script.js?v=9" defer></script>
+    <script src="script.js?v=15" defer></script>
 </body>
 </html>
