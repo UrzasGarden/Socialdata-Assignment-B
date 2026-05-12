@@ -157,6 +157,9 @@ def chart_time(df: pd.DataFrame) -> None:
     ax.set_xlabel("Year")
     ax.set_ylabel("Income Gap (% less than men)")
     ax.yaxis.set_major_formatter(PercentFormatter())
+    years = sorted(gap_pivot.index.astype(int).unique())
+    ax.set_xticks(years[::2])
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: str(int(x))))
     ax.legend(frameon=False, loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=9)
     ax.margins(x=0.02)
 
