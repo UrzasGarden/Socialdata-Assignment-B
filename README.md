@@ -57,7 +57,8 @@ python -m http.server 8000
 Then open [http://localhost:8000](http://localhost:8000) in your browser.
 
 ### Option 3: Regenerate the dashboard data
-If you need to re-run the data pipeline (requires the source CSV from Statistics Denmark):
+If you need to re-run the data pipeline it requires the source CSV from Statistics Denmark, [link to data](https://www.statistikbanken.dk/INDKP107), and a change of path in [Hand-in.ipynb](Hand-in.ipynb).
+
 
 ```bash
 cd website
