@@ -188,7 +188,11 @@
   function mapMetricValue(dp) {
     if (!dp) return null;
     if (state.metric === "gap_pct") {
-      return dp.Men ? (1 - dp.Women / dp.Men) * 100 : null;
+      {
+        const hi = Math.max(dp.Men, dp.Women);
+        const lo = Math.min(dp.Men, dp.Women);
+        return hi ? (1 - lo / hi) * 100 : null;
+      }
     }
     return dp.Gap;
   }
@@ -220,16 +224,21 @@
     return [parseInt(v.slice(0,2), 16), parseInt(v.slice(2,4), 16), parseInt(v.slice(4,6), 16)];
   }
 
-  /** Compute min/max gap to anchor the colour scale and legend. */
-  function gapDomain(layerKey) {
-    const fc = state.geo[layerKey];
-    if (!fc) return [0, 0];
+  /** Compute min/max gap to anchor the colour scale and legend.
+   *  Domain is computed across ALL layers (country/regions/munis) for the
+   *  current income / education / year / metric so colors stay consistent
+   *  when the user toggles between geographic levels. */
+  function gapDomain(_layerKey) {
     const gaps = [];
-    fc.features.forEach(f => {
-      const r = lookupFeature(f, layerKey);
-      const v = mapMetricValue(r?.dp);
-      if (v != null && isFinite(v)) gaps.push(v);
-    });
+    for (const key of ["country", "regions", "munis"]) {
+      const fc = state.geo[key];
+      if (!fc) continue;
+      fc.features.forEach(f => {
+        const r = lookupFeature(f, key);
+        const v = mapMetricValue(r?.dp);
+        if (v != null && isFinite(v)) gaps.push(v);
+      });
+    }
     if (!gaps.length) return [0, 0];
     return [Math.min(...gaps), Math.max(...gaps)];
   }
@@ -256,7 +265,7 @@
       const incomeLabel = state.incomeType || "Wages/salary";
       const yearLabel = state.year || "2024";
       legendLabel.textContent = state.metric === "gap_pct"
-        ? `${incomeLabel} gap (% of men's income, ${yearLabel})`
+        ? `${incomeLabel} gap (% of the higher earner's income, ${yearLabel})`
         : `${incomeLabel} gap (M − W, ${yearLabel} DKK)`;
     }
 
@@ -418,7 +427,7 @@
       subtitleText = `Average ${incLabel.toLowerCase()} side-by-side, ${state.year} DKK (CPI-adjusted to 2024)`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Income Gap (%)";
-      subtitleText = `How much less women earn than men in ${state.year}, as % of men's pay · [(1 − Women / Men) × 100]`;
+      subtitleText = `Pay gap as % of the higher earner's income in ${state.year} · [(1 − lower / higher) × 100]`;
     }
 
     titleEl.textContent =
@@ -495,7 +504,11 @@
     } else if (state.metric === "gap_pct") {
       datasets = [{
         label: "Gap (%)",
-        data: points.map(p => p.Men ? ((1 - p.Women / p.Men) * 100) : null),
+        data: points.map(p => {
+          const hi = Math.max(p.Men, p.Women);
+          const lo = Math.min(p.Men, p.Women);
+          return hi ? (1 - lo / hi) * 100 : null;
+        }),
         backgroundColor: ACCENT_PURPLE,
         borderRadius: 6,
       }];
@@ -571,7 +584,11 @@
           data: years.map(y => {
             const dp = dataDict[String(y)]?.[name]?.[state.education];
             if (!dp) return null;
-            if (state.metric === "gap_pct") return dp.Men ? ((1 - dp.Women / dp.Men) * 100) : null;
+            if (state.metric === "gap_pct") {
+              const hi = Math.max(dp.Men, dp.Women);
+              const lo = Math.min(dp.Men, dp.Women);
+              return hi ? (1 - lo / hi) * 100 : null;
+            }
             return dp.Gap;
           }),
           borderColor: palette[i % palette.length],
@@ -597,7 +614,7 @@
       subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'Wages/salary'}, 2024 DKK · ${areas.length} areas`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Gap Trend (%)";
-      subtitleText = `${state.incomeType || 'Wages/salary'} gap as % of men's income · (1 − Women / Men) × 100 · ${areas.length} areas`;
+      subtitleText = `${state.incomeType || 'Wages/salary'} gap as % of the higher earner's income · (1 − lower / higher) × 100 · ${areas.length} areas`;
     }
 
     document.getElementById("chart-title").textContent =
