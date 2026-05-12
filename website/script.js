@@ -188,7 +188,7 @@
   function mapMetricValue(dp) {
     if (!dp) return null;
     if (state.metric === "gap_pct") {
-      return dp.Women ? (dp.Gap / dp.Women) * 100 : null;
+      return dp.Men ? (1 - dp.Women / dp.Men) * 100 : null;
     }
     return dp.Gap;
   }
@@ -254,7 +254,7 @@
       const incomeLabel = state.incomeType || "Wages/salary";
       const yearLabel = state.year || "2024";
       legendLabel.textContent = state.metric === "gap_pct"
-        ? `${incomeLabel} gap (% of women's income, ${yearLabel})`
+        ? `${incomeLabel} gap (% of men's income, ${yearLabel})`
         : `${incomeLabel} gap (M − W, ${yearLabel} DKK)`;
     }
 
@@ -409,14 +409,14 @@
 
     const incLabel = state.incomeType || 'Wages/salary';
     let titlePrefix = "Income Gap";
-    let subtitleText = `How much more men earn relative to women in ${state.year} ·  [(Men − Women) / Women × 100] DKK (CPI-adjusted to 2024)`;
+    let subtitleText = `How much more men earn than women in ${state.year} · [Men − Women] DKK (CPI-adjusted to 2024)`;
 
     if (state.metric === "compare") {
       titlePrefix = "Men vs Women Income";
       subtitleText = `Average ${incLabel.toLowerCase()} side-by-side, ${state.year} DKK (CPI-adjusted to 2024)`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Income Gap (%)";
-      subtitleText = `How much more men earn relative to women in ${state.year} · [(Men − Women) / Women × 100]`;
+      subtitleText = `How much more men earn relative to women in ${state.year} · [(1 − Women / Men) × 100]`;
     }
 
     titleEl.textContent =
@@ -493,7 +493,7 @@
     } else if (state.metric === "gap_pct") {
       datasets = [{
         label: "Gap (%)",
-        data: points.map(p => p.Women ? ((p.Gap / p.Women) * 100) : null),
+        data: points.map(p => p.Men ? ((1 - p.Women / p.Men) * 100) : null),
         backgroundColor: ACCENT_PURPLE,
         borderRadius: 6,
       }];
@@ -569,7 +569,7 @@
           data: years.map(y => {
             const dp = dataDict[String(y)]?.[name]?.[state.education];
             if (!dp) return null;
-            if (state.metric === "gap_pct") return dp.Women ? ((dp.Gap / dp.Women) * 100) : null;
+            if (state.metric === "gap_pct") return dp.Men ? ((1 - dp.Women / dp.Men) * 100) : null;
             return dp.Gap;
           }),
           borderColor: palette[i % palette.length],
@@ -595,7 +595,7 @@
       subtitleText = `Average ${state.incomeType ? state.incomeType.toLowerCase() : 'Wages/salary'}, 2024 DKK · ${areas.length} areas`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Gap Trend (%)";
-      subtitleText = `${state.incomeType || 'Wages/salary'} gap as % of women's income · ${areas.length} areas`;
+      subtitleText = `${state.incomeType || 'Wages/salary'} gap as % of men's income · (1 − Women / Men) × 100 · ${areas.length} areas`;
     }
 
     document.getElementById("chart-title").textContent =
