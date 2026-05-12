@@ -193,14 +193,16 @@
     return dp.Gap;
   }
 
-  /** Linear hex interpolation along blue -> red. */
+  /** Linear hex interpolation along green -> yellow -> orange -> red. */
   function colorForGap(gap, min, max) {
     if (gap == null || !isFinite(gap)) return "rgba(255,255,255,0.05)";
     if (max <= min) return ACCENT_PURPLE;
     const t = Math.max(0, Math.min(1, (gap - min) / (max - min)));
     const stops = [
-      { t: 0.0, c: hexToRgb(ACCENT_BLUE) },
-      { t: 1.0, c: hexToRgb(ACCENT_RED) },
+      { t: 0.0,  c: hexToRgb("#a8e063") }, // light green
+      { t: 0.4,  c: hexToRgb("#fde047") }, // yellow
+      { t: 0.7,  c: hexToRgb("#f97316") }, // orange
+      { t: 1.0,  c: hexToRgb("#ef4444") }, // red
     ];
     let a = stops[0], b = stops[stops.length - 1];
     for (let i = 0; i < stops.length - 1; i++) {
@@ -416,7 +418,7 @@
       subtitleText = `Average ${incLabel.toLowerCase()} side-by-side, ${state.year} DKK (CPI-adjusted to 2024)`;
     } else if (state.metric === "gap_pct") {
       titlePrefix = "Income Gap (%)";
-      subtitleText = `How much more men earn relative to women in ${state.year} · [(1 − Women / Men) × 100]`;
+      subtitleText = `How much less women earn than men in ${state.year}, as % of men's pay · [(1 − Women / Men) × 100]`;
     }
 
     titleEl.textContent =
@@ -712,8 +714,8 @@
     const incomeLabel = state.incomeType || "Wages";
     titleEl.textContent = `Education Distribution — ${layerLabel}, ${state.year}`;
     subEl.textContent   = state.selected.size
-      ? `Share of ${incomeLabel.toLowerCase()} earners by education in ${state.selected.size} selected area${state.selected.size > 1 ? "s" : ""} (normalized per area)`
-      : `Share of ${incomeLabel.toLowerCase()} earners by education · top 6 ${layerLabel.toLowerCase()} (normalized per area)`;
+      ? `Share of people by education in ${state.selected.size} selected area${state.selected.size > 1 ? "s" : ""} (normalized per area)`
+      : `Share of people by education · top 6 ${layerLabel.toLowerCase()} (normalized per area)`;
 
     // Draws subtle row bands so each education level reads as its own
     // horizontal lane (label sits inside the band, not on a gridline).
@@ -877,7 +879,7 @@
         },
         scales: {
           x: {
-            title: { display: true, text: `Share of ${incomeLabel.toLowerCase()} earners (%)`, color: TEXT_SECONDARY, font: { size: 11 } },
+            title: { display: true, text: `Share of people (%)`, color: TEXT_SECONDARY, font: { size: 11 } },
             ticks: { color: TEXT_SECONDARY, callback: v => v.toFixed(0) + "%" },
             grid:  { color: "rgba(255,255,255,0.05)" },
             min: 0,
