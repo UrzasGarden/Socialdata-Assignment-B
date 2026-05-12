@@ -97,6 +97,8 @@
                     </div>
 
                     <button type="button" id="update-btn" class="cta-button update-btn">Update Data</button>
+
+                    <button type="button" id="cpi-info-btn" class="cpi-info-link">All values CPI-adjusted to 2024 DKK &nbsp;&#9432;</button>
                 </aside>
 
                 <!-- RIGHT: Map + dynamic chart -->
@@ -161,6 +163,36 @@
     <footer class="glass-footer">
         Data sourced from INDKP107 - Statistics Denmark
     </footer>
+
+    <!-- CPI Adjustment Modal -->
+    <div id="cpi-modal" class="modal-overlay" hidden>
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="cpi-modal-title">
+            <div class="modal-header">
+                <h2 id="cpi-modal-title">CPI Adjustment</h2>
+                <button type="button" id="cpi-modal-close" class="modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>All income figures are converted to <strong>2024 DKK</strong> to make values comparable across years. Multipliers are derived from Statistics Denmark's <strong>PRIS113</strong> (Forbrugerprisindeks).</p>
+                <p class="modal-formula">Adjusted value = Nominal value &times; (CPI<sub>2024</sub> / CPI<sub>year</sub>)</p>
+                <table class="cpi-table">
+                    <thead><tr><th>Year</th><th>Multiplier</th><th>Year</th><th>Multiplier</th></tr></thead>
+                    <tbody>
+                        <tr><td>2004</td><td>1.459</td><td>2015</td><td>1.200</td></tr>
+                        <tr><td>2005</td><td>1.434</td><td>2016</td><td>1.196</td></tr>
+                        <tr><td>2006</td><td>1.407</td><td>2017</td><td>1.183</td></tr>
+                        <tr><td>2007</td><td>1.384</td><td>2018</td><td>1.174</td></tr>
+                        <tr><td>2008</td><td>1.337</td><td>2019</td><td>1.164</td></tr>
+                        <tr><td>2009</td><td>1.320</td><td>2020</td><td>1.159</td></tr>
+                        <tr><td>2010</td><td>1.288</td><td>2021</td><td>1.137</td></tr>
+                        <tr><td>2011</td><td>1.254</td><td>2022</td><td>1.052</td></tr>
+                        <tr><td>2012</td><td>1.224</td><td>2023</td><td>1.012</td></tr>
+                        <tr><td>2013</td><td>1.214</td><td>2024</td><td>1.000</td></tr>
+                        <tr><td>2014</td><td>1.206</td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
