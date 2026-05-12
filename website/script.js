@@ -1,5 +1,5 @@
 /* ==========================================================================
- * Interactive Dashboard — "Bowl" of the Martini Glass
+ * Interactive Dashboard - "Bowl" of the Martini Glass
  * --------------------------------------------------------------------------
  * Loads the pre-aggregated dashboard JSON + three GeoJSON files, renders an
  * interactive Leaflet choropleth, and drives a Chart.js panel that responds
@@ -134,7 +134,7 @@
       opt.textContent = lv;
       eduSel.appendChild(opt);
     });
-    // Default to the highest tier — that's where the gap is most dramatic.
+    // Default to the highest tier - that's where the gap is most dramatic.
     const defaultEdu = state.meta.Education_Levels.includes("Long Higher Education")
       ? "Long Higher Education"
       : (state.meta.Education_Levels.includes("Long tertiary") ? "Long tertiary" : state.meta.Education_Levels[0]);
@@ -156,7 +156,7 @@
   // 3. Map
   // -----------------------------------------------------------------------
   function initMap() {
-    // No tile layer — we want the page's animated blob background to bleed
+    // No tile layer - we want the page's animated blob background to bleed
     // through. The map is purely a vector choropleth on transparent canvas.
     state.map = L.map("map", {
       zoomControl: true,
@@ -256,8 +256,8 @@
     const [gMin, gMax] = gapDomain(layerKey);
 
     // Update legend ticks.
-    document.getElementById("legend-min").textContent = gMax > gMin ? formatMetric(gMin) : "—";
-    document.getElementById("legend-max").textContent = gMax > gMin ? formatMetric(gMax) : "—";
+    document.getElementById("legend-min").textContent = gMax > gMin ? formatMetric(gMin) : "-";
+    document.getElementById("legend-max").textContent = gMax > gMin ? formatMetric(gMax) : "-";
     document.getElementById("map-legend").style.opacity = gMax > gMin ? "1" : "0.3";
 
     const legendLabel = document.querySelector("#map-legend .legend-label");
@@ -270,7 +270,7 @@
     }
 
     // municipalities_clean.geojson already has exactly 99 dissolved features
-    // (98 current municipalities + Christiansø). No filter needed — features
+    // (98 current municipalities + Christiansø). No filter needed - features
     // without data for the current filter show greyed out via the style fn.
     const filter = () => true;
 
@@ -349,14 +349,14 @@
   }
 
   function formatKr(v) {
-    if (v == null || !isFinite(v)) return "—";
+    if (v == null || !isFinite(v)) return "-";
     if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(2) + "M kr.";
     if (Math.abs(v) >= 1_000)     return (v / 1_000).toFixed(0) + "k kr.";
     return Math.round(v) + " kr.";
   }
 
   function formatPct(v) {
-    if (v == null || !isFinite(v)) return "—";
+    if (v == null || !isFinite(v)) return "-";
     return v.toFixed(1) + "%";
   }
 
@@ -388,7 +388,7 @@
     }
 
     // Sort by gap descending and cap at 12 for legibility (only when
-    // selection is empty — selections always show all selected items).
+    // selection is empty - selections always show all selected items).
     if (!state.selected.size && layerKey === "munis") {
       names.sort((a, b) => yearMap[b][state.education].Gap - yearMap[a][state.education].Gap);
       names = names.slice(0, 12);
@@ -431,12 +431,12 @@
     }
 
     titleEl.textContent =
-      `${titlePrefix}: ${state.education} — ${layerLabel}` +
+      `${titlePrefix}: ${state.education} - ${layerLabel}` +
       (state.selected.size ? ` (${state.selected.size} selected)` : "");
     subtitleEl.textContent = subtitleText;
 
     if (!points.length) {
-      titleEl.textContent += " — no data";
+      titleEl.textContent += " - no data";
       return;
     }
 
@@ -729,7 +729,7 @@
 
     const layerLabel = { country: "Subregions", regions: "Regions", munis: "Municipalities" }[layerKey];
     const incomeLabel = state.incomeType || "Wages";
-    titleEl.textContent = `Education Distribution — ${layerLabel}, ${state.year}`;
+    titleEl.textContent = `Education Distribution - ${layerLabel}, ${state.year}`;
     subEl.textContent   = state.selected.size
       ? `Share of people by education in ${state.selected.size} selected area${state.selected.size > 1 ? "s" : ""} (normalized per area)`
       : `Share of people by education · top 6 ${layerLabel.toLowerCase()} (normalized per area)`;
@@ -951,7 +951,7 @@
   function renderSelectionChips() {
     const list = document.getElementById("selection-list");
     if (!state.selected.size) {
-      list.innerHTML = `<span class="empty">None — showing all visible areas</span>`;
+      list.innerHTML = `<span class="empty">None - showing all visible areas</span>`;
       return;
     }
     list.innerHTML = [...state.selected].map(name => `
@@ -1077,7 +1077,7 @@
     } catch (err) {
       console.error("Dashboard failed to initialize:", err);
       document.getElementById("map").innerHTML =
-        `<div style="padding:2rem;color:#f87171">Failed to load data — see console.<br>` +
+        `<div style="padding:2rem;color:#f87171">Failed to load data - see console.<br>` +
         `If you're opening index.html with file://, you need to serve it via a local web server ` +
         `(fetch() can't read local files).</div>`;
     }

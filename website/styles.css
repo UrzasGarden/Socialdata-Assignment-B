@@ -581,7 +581,7 @@ body {
     color: var(--text-secondary) !important;
 }
 
-/* Hover tooltip — same dark glass treatment as popups, plus arrow color
+/* Hover tooltip - same dark glass treatment as popups, plus arrow color
    overrides so the little pointer triangle blends in. */
 .leaflet-tooltip {
     background: rgba(15, 17, 25, 0.92) !important;
