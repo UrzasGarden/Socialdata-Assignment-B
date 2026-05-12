@@ -229,7 +229,7 @@
    *  current income / education / year / metric so colors stay consistent
    *  when the user toggles between geographic levels. */
   function gapDomain(_layerKey) {
-    if (state.metric === "gap_pct") return [0, 50];
+    if (state.metric === "gap_pct") return [0, 40];
     const gaps = [];
     for (const key of ["country", "regions", "munis"]) {
       const fc = state.geo[key];
