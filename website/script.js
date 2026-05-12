@@ -229,6 +229,7 @@
    *  current income / education / year / metric so colors stay consistent
    *  when the user toggles between geographic levels. */
   function gapDomain(_layerKey) {
+    if (state.metric === "gap_pct") return [0, 50];
     const gaps = [];
     for (const key of ["country", "regions", "munis"]) {
       const fc = state.geo[key];
@@ -240,7 +241,8 @@
       });
     }
     if (!gaps.length) return [0, 0];
-    return [0, 40];
+    const maxVal = Math.max(...gaps);
+    return [0, Math.ceil(maxVal / 10000) * 10000];
   }
 
   /** Re-render the active GeoJSON layer with the current education/year.
@@ -1088,5 +1090,17 @@
   } else {
     main();
   }
+
+  // CPI modal
+  const cpiModal = document.getElementById("cpi-modal");
+  document.getElementById("cpi-info-btn").addEventListener("click", () => {
+    cpiModal.hidden = false;
+  });
+  document.getElementById("cpi-modal-close").addEventListener("click", () => {
+    cpiModal.hidden = true;
+  });
+  cpiModal.addEventListener("click", e => {
+    if (e.target === cpiModal) cpiModal.hidden = true;
+  });
 
 })();

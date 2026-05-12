@@ -817,3 +817,104 @@ body {
     color: #ddd6fe;
     font-weight: 600;
 }
+
+/* --- CPI info button --- */
+.cpi-info-link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-align: center;
+    width: 100%;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+.cpi-info-link:hover { opacity: 1; color: var(--text-primary); }
+
+/* --- Modal --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.modal-overlay[hidden] { display: none; }
+
+.modal-box {
+    background: #1a1d2e;
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+    max-width: 520px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+.modal-header h2 { font-size: 1.1rem; margin: 0; }
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0.25rem;
+    transition: color 0.2s;
+}
+.modal-close:hover { color: var(--text-primary); }
+
+.modal-body {
+    padding: 1.25rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+.modal-body p { margin: 0; font-size: 0.875rem; line-height: 1.6; color: var(--text-secondary); }
+.modal-body strong { color: var(--text-primary); }
+
+.modal-formula {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 0.5rem;
+    padding: 0.6rem 1rem;
+    font-family: monospace;
+    font-size: 0.85rem !important;
+    color: var(--text-primary) !important;
+    text-align: center;
+}
+
+.cpi-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+.cpi-table th {
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid var(--glass-border);
+    text-align: left;
+}
+.cpi-table td {
+    padding: 0.3rem 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-variant-numeric: tabular-nums;
+}
+.cpi-table tbody tr:last-child td { border-bottom: none; }
