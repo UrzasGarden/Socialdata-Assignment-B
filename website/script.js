@@ -240,7 +240,7 @@
       });
     }
     if (!gaps.length) return [0, 0];
-    return [0, 50];
+    return [0, 40];
   }
 
   /** Re-render the active GeoJSON layer with the current education/year.
